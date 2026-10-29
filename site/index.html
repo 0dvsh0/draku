@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Draku — Your files, finally understood</title>
+  <meta name="description" content="Draku is a free, open-source, private AI that understands every screenshot, photo and PDF on your device. It finds, remembers, protects and lets go. Nothing leaves your machine.">
+  <meta name="theme-color" content="#080708">
+  <meta property="og:title" content="Draku — Your files, finally understood">
+  <meta property="og:description" content="A private AI file manager. Find, Remember, Protect, Let go. Nothing leaves your machine.">
+  <meta property="og:image" content="images/draku.jpg">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Shared SVG defs: the eye, flames, fur filter -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="fur" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <clipPath id="irisClip"><circle cx="50" cy="50" r="33"/></clipPath>
+      <symbol id="flames" viewBox="0 0 100 100">
+        <path d="M18 86 C16 72 24 66 22 54 C28 60 31 66 33 70 C31 56 36 46 41 34 C44 46 50 52 49 64 C53 56 56 50 55 40 C63 50 67 58 65 70 C68 64 71 60 72 52 C80 62 84 74 82 86 Z"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="top">
+    <a class="nav__brand" href="#top" aria-label="Draku home">
+      <span class="nav__avatar"><img src="images/draku.jpg" alt="" width="36" height="36"></span>
+      <span class="nav__word">Draku</span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#idea">The idea</a>
+      <a href="#screen">One screen</a>
+      <a href="#promises">Promises</a>
+      <a href="#demo">Demo</a>
+      <a href="#hood">Under the hood</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <div class="nav__cta">
+      <a class="pill pill--ghost" href="#open" data-repo>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        <span>Source</span>
+      </a>
+      <a class="pill pill--blood" href="#get">Get Draku</a>
+      <button class="nav__burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero" aria-labelledby="hero-title">
+      <canvas class="hero__gl" id="embers" aria-hidden="true"></canvas>
+      <div class="hero__grain" aria-hidden="true"></div>
+
+      <div class="hero__eyes" aria-hidden="true">
+        <!-- Left eye -->
+        <svg class="eye" viewBox="0 0 100 100" data-eye>
+          <circle cx="50" cy="50" r="48" fill="#080708"/>
+          <circle cx="50" cy="50" r="44" fill="#EAE6E6" stroke="#080708" stroke-width="2.5"/>
+          <circle cx="50" cy="50" r="39.5" fill="none" stroke="#080708" stroke-width="1.2" opacity=".55"/>
+          <g class="eye__iris">
+            <circle cx="50" cy="50" r="34" fill="#080708"/>
+            <circle cx="50" cy="50" r="32" fill="#7A1D25"/>
+            <g clip-path="url(#irisClip)">
+              <use href="#flames" class="eye__flame" x="0" y="0" width="100" height="100" fill="#080708"/>
+            </g>
+            <ellipse cx="38" cy="34" rx="5" ry="3" fill="#EAE6E6" opacity=".35" transform="rotate(-30 38 34)"/>
+          </g>
+          <rect class="eye__lid" x="0" y="0" width="100" height="100" fill="#080708"/>
+        </svg>
+        <!-- Right eye -->
+        <svg class="eye" viewBox="0 0 100 100" data-eye>
+          <circle cx="50" cy="50" r="48" fill="#080708"/>
+          <circle cx="50" cy="50" r="44" fill="#EAE6E6" stroke="#080708" stroke-width="2.5"/>
+          <circle cx="50" cy="50" r="39.5" fill="none" stroke="#080708" stroke-width="1.2" opacity=".55"/>
+          <g class="eye__iris">
+            <circle cx="50" cy="50" r="34" fill="#080708"/>
+            <circle cx="50" cy="50" r="32" fill="#7A1D25"/>
+            <g clip-path="url(#irisClip)">
+              <use href="#flames" class="eye__flame eye__flame--b" x="0" y="0" width="100" height="100" fill="#080708"/>
+            </g>
+            <ellipse cx="38" cy="34" rx="5" ry="3" fill="#EAE6E6" opacity=".35" transform="rotate(-30 38 34)"/>
+          </g>
+          <rect class="eye__lid" x="0" y="0" width="100" height="100" fill="#080708"/>
+        </svg>
+        <!-- whiskers -->
+        <svg class="whiskers whiskers--l" viewBox="0 0 40 30"><path d="M38 8 L6 2 M38 15 L2 15 M38 22 L6 28"/></svg>
+        <svg class="whiskers whiskers--r" viewBox="0 0 40 30"><path d="M2 8 L34 2 M2 15 L38 15 M2 22 L34 28"/></svg>
+      </div>
+
+      <div class="hero__copy">
+        <p class="eyebrow"><span class="dot"></span> Free &amp; open source · Runs offline · v0.1</p>
+        <h1 id="hero-title" class="hero__title">Your files,<br><em>finally understood.</em></h1>
+        <p class="hero__lede">Draku is a private AI that reads every screenshot, photo and PDF on your device. It finds what you need, warns you before a date passes, hides what should stay private, and lets go of what is dead.</p>
+        <p class="hero__kicker">Nothing leaves your machine.</p>
+        <div class="hero__actions" id="get">
+          <a class="btn btn--blood" href="#open" data-repo>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+            Download for <span data-os>your laptop</span>
+          </a>
+          <a class="btn btn--line" href="#demo">Watch the 60-second demo</a>
+        </div>
+        <ul class="hero__facts" aria-label="Key facts">
+          <li><b>0</b> bytes uploaded</li>
+          <li><b>0</b> accounts</li>
+          <li><b>0</b> settings</li>
+          <li><b>1</b> reading per file</li>
+        </ul>
+      </div>
+
+      <div class="hero__scroll" aria-hidden="true"><span></span></div>
+      <svg class="wing-edge" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 0 H1440 V40 Q1380 80 1320 40 Q1260 80 1200 40 Q1140 80 1080 40 Q1020 80 960 40 Q900 80 840 40 Q780 80 720 40 Q660 80 600 40 Q540 80 480 40 Q420 80 360 40 Q300 80 240 40 Q180 80 120 40 Q60 80 0 40 Z"/>
+      </svg>
+    </section>
+
+    <!-- ============ THE MOMENT ============ -->
+    <section class="moment section" id="moment" aria-labelledby="moment-title">
+      <div class="wrap">
+        <p class="label">01 — The moment</p>
+        <h2 id="moment-title" class="h2">You're at the pharmacy counter.<br><span class="muted">The prescription is somewhere in your phone.</span></h2>
+
+        <div class="filename" aria-live="polite">
+          <div class="filename__chip">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M4 5h16v14H4zM4 15l5-5 4 4 3-3 4 4"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <code class="filename__text" id="morph" data-from="IMG-20261011-WA0004.jpg" data-to="2026-10-11 Dr Patel blood test prescription.jpg">IMG-20261011-WA0004.jpg</code>
+          <span class="filename__caret"></span>
+        </div>
+        <p class="moment__note">Everyone has a version of this. The warranty receipt at the service centre. The exam form that closed yesterday. The Wi-Fi password from a screenshot three months ago.</p>
+
+        <div class="moment__quote">
+          <p>Screenshots are the most-used notebook nobody calls one. But a screenshot stores <em>pixels</em>, not <em>meaning</em>.</p>
+        </div>
+
+        <h3 class="h3 center">The ghosts in your files</h3>
+        <div class="ghosts">
+          <article class="ghost">
+            <div class="ghost__icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="10" width="34" height="31" rx="4"/><path d="M7 19h34M16 6v8M32 6v8"/><path class="hl" d="M17 29h6v6h-6z"/></svg>
+            </div>
+            <h4>A date</h4>
+            <p>The warranty that ends next week. The coupon that dies tonight.</p>
+            <span class="ghost__tag">Trapped in a picture</span>
+          </article>
+          <article class="ghost">
+            <div class="ghost__icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="21" width="28" height="20" rx="4"/><path d="M16 21v-6a8 8 0 0 1 16 0v6"/><circle class="hl" cx="24" cy="31" r="3"/></svg>
+            </div>
+            <h4>A secret</h4>
+            <p>An ID number or password sitting in a gallery that any app with photo access can read.</p>
+            <span class="ghost__tag">Readable by any app</span>
+          </article>
+          <article class="ghost">
+            <div class="ghost__icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 43s-13-12-13-23a13 13 0 0 1 26 0c0 11-13 23-13 23Z"/><circle class="hl" cx="24" cy="20" r="4.5"/></svg>
+            </div>
+            <h4>A place</h4>
+            <p>Files sent by email or as documents can carry hidden location and device details.</p>
+            <span class="ghost__tag">Hidden in metadata</span>
+          </article>
+        </div>
+        <p class="moment__coda">And the files with no ghost left — like last spring's OTP screenshot — quietly fill your storage until the phone says it is full.</p>
+      </div>
+    </section>
+
+    <!-- ============ THE IDEA ============ -->
+    <section class="idea section" id="idea" aria-labelledby="idea-title">
+      <div class="wrap">
+        <p class="label">02 — The idea</p>
+        <h2 id="idea-title" class="h2">One reading.<br><em>Four outcomes.</em></h2>
+        <p class="lede">It sounds like four tools: a finder, a reminder, a bodyguard and a janitor. It is one. Each file is read once, and everything else follows from that reading.</p>
+
+        <div class="anatomy">
+          <figure class="anatomy__figure">
+            <div class="anatomy__tile">
+              <img src="images/draku.jpg" alt="Draku, a fluffy black cat with crimson bat wings and round eyes filled with black flames" width="736" height="736" loading="lazy">
+              <button class="spot" style="--x:40.6%;--y:37.5%" data-outcome="find" aria-label="Eyes: Find"><span>Eyes</span></button>
+              <button class="spot" style="--x:34.5%;--y:20%" data-outcome="remember" aria-label="Ears: Remember"><span>Ears</span></button>
+              <button class="spot" style="--x:21%;--y:40%" data-outcome="protect" aria-label="Wings: Protect"><span>Wings</span></button>
+              <button class="spot" style="--x:64%;--y:80%" data-outcome="letgo" aria-label="Tail: Let go"><span>Tail</span></button>
+            </div>
+            <figcaption>Every part of him has a job. Tap one.</figcaption>
+          </figure>
+
+          <div class="outcomes" role="tablist" aria-label="Four outcomes">
+            <button class="outcome is-active" role="tab" aria-selected="true" data-outcome="find">
+              <span class="outcome__n">01</span>
+              <span class="outcome__t">Find</span>
+              <span class="outcome__d">The eyes see inside every pixel.</span>
+            </button>
+            <button class="outcome" role="tab" aria-selected="false" data-outcome="remember">
+              <span class="outcome__n">02</span>
+              <span class="outcome__t">Remember</span>
+              <span class="outcome__d">The ears hear every clock ticking.</span>
+            </button>
+            <button class="outcome" role="tab" aria-selected="false" data-outcome="protect">
+              <span class="outcome__n">03</span>
+              <span class="outcome__t">Protect</span>
+              <span class="outcome__d">The wings fold over what is private.</span>
+            </button>
+            <button class="outcome" role="tab" aria-selected="false" data-outcome="letgo">
+              <span class="outcome__n">04</span>
+              <span class="outcome__t">Let go</span>
+              <span class="outcome__d">The tail sweeps away what is dead.</span>
+            </button>
+
+            <div class="ba" aria-live="polite">
+              <div class="ba__col">
+                <span class="ba__k">Before</span>
+                <p class="ba__v ba__v--before" id="baBefore">IMG-20261011-WA0004.jpg</p>
+              </div>
+              <svg class="ba__arrow" viewBox="0 0 40 16" aria-hidden="true"><path d="M0 8h36m-6-6 6 6-6 6"/></svg>
+              <div class="ba__col">
+                <span class="ba__k">After</span>
+                <p class="ba__v ba__v--after" id="baAfter">2026-10-11 Dr Patel blood test prescription.jpg, found by typing “blood test”</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- One file in, four results diagram -->
+        <div class="flow" aria-label="One file in, four results">
+          <svg viewBox="0 0 1000 300" class="flow__svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="beam" x1="0" x2="1">
+                <stop offset="0" stop-color="#841E28" stop-opacity="0"/>
+                <stop offset=".5" stop-color="#C2414E"/>
+                <stop offset="1" stop-color="#841E28" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path class="flow__path" d="M190 150 C 330 150, 380 150, 450 150"/>
+            <path class="flow__path" d="M550 150 C 640 150, 660 45, 790 45"/>
+            <path class="flow__path" d="M550 150 C 650 150, 680 115, 790 115"/>
+            <path class="flow__path" d="M550 150 C 650 150, 680 185, 790 185"/>
+            <path class="flow__path" d="M550 150 C 640 150, 660 255, 790 255"/>
+            <path class="flow__pulse" d="M190 150 C 330 150, 380 150, 450 150"/>
+            <path class="flow__pulse d1" d="M550 150 C 640 150, 660 45, 790 45"/>
+            <path class="flow__pulse d2" d="M550 150 C 650 150, 680 115, 790 115"/>
+            <path class="flow__pulse d3" d="M550 150 C 650 150, 680 185, 790 185"/>
+            <path class="flow__pulse d4" d="M550 150 C 640 150, 660 255, 790 255"/>
+            <!-- file -->
+            <g transform="translate(110 100)">
+              <path d="M0 0h56l24 24v76H0z" class="flow__file"/>
+              <path d="M56 0v24h24" class="flow__fold"/>
+              <text x="40" y="70" text-anchor="middle" class="flow__ext">.jpg</text>
+            </g>
+            <text x="150" y="232" text-anchor="middle" class="flow__cap">1 file in</text>
+            <!-- eye core -->
+            <g transform="translate(450 100)">
+              <circle cx="50" cy="50" r="50" fill="#080708" stroke="#EAE6E6" stroke-width="2"/>
+              <circle cx="50" cy="50" r="42" fill="#EAE6E6"/>
+              <circle cx="50" cy="50" r="30" fill="#7A1D25" stroke="#080708" stroke-width="2"/>
+              <g clip-path="url(#irisClip)" transform="translate(5 5) scale(.9)">
+                <use href="#flames" width="100" height="100" fill="#080708" class="eye__flame"/>
+              </g>
+            </g>
+            <text x="500" y="232" text-anchor="middle" class="flow__cap">read once</text>
+            <!-- outputs -->
+            <g class="flow__out"><circle cx="800" cy="45" r="5"/><text x="818" y="51">Find — what it is</text></g>
+            <g class="flow__out"><circle cx="800" cy="115" r="5"/><text x="818" y="121">Remember — when it matters</text></g>
+            <g class="flow__out"><circle cx="800" cy="185" r="5"/><text x="818" y="191">Protect — what is private</text></g>
+            <g class="flow__out"><circle cx="800" cy="255" r="5"/><text x="818" y="261">Let go — is it still needed</text></g>
+          </svg>
+          <p class="flow__line">Find, Remember, Protect and Let go are not four features. They are four answers to one question: <em>what is this file, and what should happen to it?</em></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ONE SCREEN ============ -->
+    <section class="screen section" id="screen" aria-labelledby="screen-title">
+      <div class="wrap">
+        <p class="label">03 — The product</p>
+        <h2 id="screen-title" class="h2">One screen.<br><em>No settings.</em></h2>
+        <p class="lede">Drop a folder, or point Draku at Screenshots and Downloads. When it has read them, you see three cards and a search line. That's the whole product. Go on — it's live.</p>
+
+        <div class="app" id="app">
+          <div class="app__bar">
+            <span class="tl"></span><span class="tl"></span><span class="tl"></span>
+            <span class="app__title">Draku — Demo folder · 25 files</span>
+            <span class="app__air" title="Airplane mode on">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
+              Offline
+            </span>
+          </div>
+
+          <div class="app__body">
+            <label class="ask">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <input id="ask" type="search" placeholder="Ask anything." autocomplete="off" aria-label="Ask anything about your files">
+              <kbd>⌘K</kbd>
+            </label>
+            <div class="ask__hints">
+              <button data-q="Wi-Fi password from last month">Wi-Fi password from last month</button>
+              <button data-q="blood test">blood test</button>
+              <button data-q="laptop warranty">laptop warranty</button>
+              <button data-q="train ticket">train ticket</button>
+            </div>
+            <div class="results" id="results" aria-live="polite"></div>
+
+            <div class="cards">
+              <!-- Deadlines -->
+              <article class="card card--date">
+                <header><span class="card__num">2</span><span class="card__what">deadlines</span></header>
+                <ul class="card__list">
+                  <li><span>Laptop warranty ends</span><b class="warn">in 4 days</b></li>
+                  <li><span>Exam form closes</span><b class="warn">tomorrow</b></li>
+                </ul>
+                <button class="card__btn" id="btnCal">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg>
+                  <span>Add to calendar</span>
+                </button>
+              </article>
+
+              <!-- Secret -->
+              <article class="card card--secret">
+                <header><span class="card__num">1</span><span class="card__what">exposed secret</span></header>
+                <div class="shot" id="shot">
+                  <div class="shot__tab"><span></span>router.local / admin</div>
+                  <div class="shot__row"><small>Network</small><span>Home_5G</span></div>
+                  <div class="shot__row"><small>Password</small><span class="secret">tiger-lily-0429</span></div>
+                  <div class="shot__gps"><svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Zm0-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg><span>GPS 19.0760, 72.8777</span></div>
+                </div>
+                <button class="card__btn" id="btnSafe">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                  <span>Make a safe copy</span>
+                </button>
+              </article>
+
+              <!-- Let go -->
+              <article class="card card--letgo">
+                <header><span class="card__num" id="letgoNum">9</span><span class="card__what">files ready to let go</span></header>
+                <div class="tiles" id="tiles">
+                  <span>OTP</span><span>OTP</span><span>QR</span><span>OTP</span><span>Ticket</span><span>QR</span><span>Dup</span><span>Dup</span><span>Dup</span>
+                </div>
+                <div class="rest" id="rest" hidden>
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                  <span>9 files resting · 41 MB freed</span>
+                  <button class="link" id="btnRestore">Restore</button>
+                </div>
+                <button class="card__btn" id="btnAside">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                  <span>Set aside</span>
+                </button>
+              </article>
+            </div>
+            <p class="app__foot">Nothing changes on your device until you press a button.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROMISES ============ -->
+    <section class="promises section" id="promises" aria-labelledby="promises-title">
+      <div class="wrap">
+        <p class="label">04 — What we said no to</p>
+        <h2 id="promises-title" class="h2">The vault is a promise.<br><em>These are its terms.</em></h2>
+        <ol class="nos">
+          <li><span class="no">No</span><span class="what">upload.</span><p>Every file is read on your device. There is no cloud mode to switch on.</p></li>
+          <li><span class="no">No</span><span class="what">deleting.</span><p>Files you let go move to a rest folder you can restore from. Only you empty it.</p></li>
+          <li><span class="no">No</span><span class="what">guessing out loud.</span><p>Draku suggests and you confirm. A date becomes a reminder only when you tap it.</p></li>
+          <li><span class="no">No</span><span class="what">account, subscription or ads.</span><p>It is free and open source.</p></li>
+          <li><span class="no">No</span><span class="what">settings screen.</span><p>If a feature needs a setting, it is not finished.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ DEMO ============ -->
+    <section class="demo section" id="demo" aria-labelledby="demo-title">
+      <div class="wrap">
+        <p class="label">05 — The 60-second demo</p>
+        <h2 id="demo-title" class="h2">Four beats.<br><em>And one reveal.</em></h2>
+        <p class="lede">Recorded on the laptop itself, with Wi-Fi visibly off. Press play.</p>
+
+        <div class="player" id="player">
+          <div class="stage">
+            <div class="stage__status">
+              <span class="stage__air"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg> Airplane mode</span>
+              <span class="stage__wifi">Wi-Fi off</span>
+              <span class="stage__clock" id="clock">0:00</span>
+            </div>
+            <div class="stage__screen" id="stageScreen">
+              <p class="stage__on" id="stageOn">A messy folder of 25 files: IMG_0042.png, scan_1(2).pdf, old screenshots.</p>
+            </div>
+            <blockquote class="stage__say" id="stageSay">“This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here.”</blockquote>
+            <div class="stage__ctrl">
+              <button class="play" id="play" aria-label="Play demo">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path class="i-play" fill="currentColor" d="M7 4v16l13-8z"/><path class="i-pause" fill="currentColor" d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+              </button>
+              <div class="track" id="track"><div class="track__fill" id="trackFill"></div>
+                <i style="left:0%"></i><i style="left:16.6%"></i><i style="left:41.6%"></i><i style="left:58.3%"></i><i style="left:80%"></i><i style="left:91.6%"></i>
+              </div>
+              <span class="dur">1:00</span>
+            </div>
+          </div>
+          <ol class="beats" id="beats">
+            <li data-t="0"><time>0:00</time><span>Airplane mode on. A messy folder.</span></li>
+            <li data-t="10"><time>0:10</time><span>Drop it. Names turn clear.</span></li>
+            <li data-t="25"><time>0:25</time><span>Warranty ends in 4 days.</span></li>
+            <li data-t="35"><time>0:35</time><span>A password lights up.</span></li>
+            <li data-t="48"><time>0:48</time><span>Nine files rest.</span></li>
+            <li data-t="55" class="beat--reveal"><time>0:55</time><span>One more thing.</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OPEN ============ -->
+    <section class="open section" id="open" aria-labelledby="open-title">
+      <div class="wrap">
+        <p class="label">06 — Why it has to be open</p>
+        <h2 id="open-title" class="h2">It reads your camera roll.<br><em>You should be able to read it back.</em></h2>
+        <p class="lede">That roll holds IDs, prescriptions, tax forms and private photos. A product that reads it must run where it lives — and you must be able to check that it does.</p>
+        <div class="trio">
+          <article>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="9" width="36" height="24" rx="3"/><path d="M2 39h44M18 33l-2 6M30 33l2 6"/><circle class="hl" cx="24" cy="21" r="4"/></svg>
+            <h3>Local needs open models.</h3>
+            <p>PaddleOCR and EmbeddingGemma run on your own hardware, so reading a file never needs a server.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 14 6 24l10 10M32 14l10 10-10 10"/><path class="hl" d="M27 10 21 38"/></svg>
+            <h3>Open means checkable.</h3>
+            <p>Anyone can read the code that reads their files and confirm that it never opens a network connection.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 34h32M12 34V20M20 34V14M28 34V24M36 34V10"/><path class="hl" d="M6 8 42 40"/></svg>
+            <h3>No storage ransom.</h3>
+            <p>It costs nothing to run, because the models run on your hardware. A tool that frees your space never sells you more.</p>
+          </article>
+        </div>
+        <div class="terminal" aria-label="Install from source">
+          <div class="terminal__bar"><span class="tl"></span><span class="tl"></span><span class="tl"></span><span>~ zsh</span><button class="copy" id="copyCmd">Copy</button></div>
+<pre><code id="cmd"><span class="c">#</span> clone, read every line, then run it — offline
+<span class="p">$</span> git clone https://github.com/draku-app/draku && cd draku
+<span class="p">$</span> ./draku ~/Screenshots ~/Downloads
+<span class="o">→ reading 25 files on-device · network: none</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ UNDER THE HOOD ============ -->
+    <section class="hood section" id="hood" aria-labelledby="hood-title">
+      <div class="wrap">
+        <p class="label">07 — Under the hood</p>
+        <h2 id="hood-title" class="h2">Eyes, memory<br><em>and judgment.</em></h2>
+        <p class="lede">Draku reads each file once — local OCR, a rule-based reader, and an open embedding model. Every outcome works from that reading.</p>
+
+        <div class="hood__grid">
+          <article class="engine">
+            <header><span class="engine__o">Find</span><span class="chips"><i>PaddleOCR</i><i>EmbeddingGemma</i></span></header>
+            <p>Local OCR reads the pixels; a rule-based reader picks a name, category and key text. EmbeddingGemma embeds that reading, so a plain-language question finds the file.</p>
+          </article>
+          <article class="engine">
+            <header><span class="engine__o">Remember</span><span class="chips"><i>local rules</i></span></header>
+            <p>The same reading extracts dates and their meaning from the surrounding words. A future date becomes a calendar file once you confirm it.</p>
+          </article>
+          <article class="engine">
+            <header><span class="engine__o">Protect</span><span class="chips"><i>PaddleOCR</i><i>EXIF</i></span></header>
+            <p>The reading flags ID numbers, passwords and card numbers. Local OCR gives exact pixel positions; blurs are burned into the image and location metadata is stripped.</p>
+          </article>
+          <article class="engine">
+            <header><span class="engine__o">Let go</span><span class="chips"><i>transparent scoring</i></span></header>
+            <p>One row per file: age, category, date passed, duplicate distance, blur, size. A small weighted score turns those signals into a reason you can read — and a button you choose to press.</p>
+          </article>
+        </div>
+
+        <div class="reading" aria-label="Example structured reading">
+          <div class="reading__head"><span>reading.json</span><span class="muted">IMG-20261011-WA0004.jpg</span></div>
+<pre><code>{
+  <span class="k">"name"</span>:     <span class="s">"2026-10-11 Dr Patel blood test prescription"</span>,
+  <span class="k">"category"</span>: <span class="s">"medical / prescription"</span>,
+  <span class="k">"dates"</span>:    [{ <span class="k">"refill_by"</span>: <span class="s">"2026-11-10"</span> }],
+  <span class="k">"private"</span>:  [<span class="s">"patient_id"</span>, <span class="s">"gps"</span>],
+  <span class="k">"dead"</span>:     <span class="n">0.04</span>,
+  <span class="k">"network"</span>:  <span class="n">null</span>
+}</code></pre>
+        </div>
+
+        <div class="road">
+          <div class="road__step is-now"><span class="road__dot"></span><b>Today</b><p>A laptop app. Drop a folder; everything runs locally.</p></div>
+          <div class="road__step"><span class="road__dot"></span><b>Next</b><p>A phone gallery extension.</p></div>
+          <div class="road__step"><span class="road__dot"></span><b>Then</b><p>A watch folder that reads new screenshots as they arrive.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="faq section" id="faq" aria-labelledby="faq-title">
+      <div class="wrap wrap--narrow">
+        <p class="label">08 — Questions</p>
+        <h2 id="faq-title" class="h2">Sharp questions.<br><em>True answers.</em></h2>
+        <div class="qa">
+          <details>
+            <summary>Isn't this just Windows Recall?</summary>
+            <p>Recall-style tools capture your screen over time so you can search it. Draku captures nothing: it reads only the files you choose, then acts on them.</p>
+          </details>
+          <details>
+            <summary>How do I know nothing leaves the device?</summary>
+            <p>The demo runs in airplane mode, and the code is open so anyone can check. Pull the network cable — Draku won't notice.</p>
+          </details>
+          <details>
+            <summary>Why not a cloud gallery?</summary>
+            <p>Cloud galleries work by uploading your files. Draku never does, and it goes beyond search: it renames, reminds, redacts and clears.</p>
+          </details>
+          <details>
+            <summary>What if it misses a secret?</summary>
+            <p>It shows every detection before you share, and you confirm. Blurs are burned into the image, so they cannot be peeled off.</p>
+          </details>
+          <details>
+            <summary>How does Draku decide what is dead?</summary>
+            <p>It adds up a few signals you can inspect: age, category, whether a date has passed, duplicate distance, blur and size. No training run, no hidden model — just weights in the source, and a button you choose to press.</p>
+          </details>
+          <details>
+            <summary>Is the hosted demo a contradiction?</summary>
+            <p>The hosted demo and any voiced video use sample files only, so people can try it with zero setup. The real product runs on your device. We say so plainly.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FINAL ============ -->
+    <section class="final" aria-labelledby="final-title">
+      <svg class="wing-edge wing-edge--top" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 80 H1440 V40 Q1380 0 1320 40 Q1260 0 1200 40 Q1140 0 1080 40 Q1020 0 960 40 Q900 0 840 40 Q780 0 720 40 Q660 0 600 40 Q540 0 480 40 Q420 0 360 40 Q300 0 240 40 Q180 0 120 40 Q60 0 0 40 Z"/>
+      </svg>
+      <div class="wrap final__inner">
+        <div class="final__portrait">
+          <img src="images/draku.jpg" alt="Draku mascot" width="736" height="736" loading="lazy">
+        </div>
+        <div class="final__copy">
+          <h2 id="final-title" class="h2">He sees everything.<br><em>He tells no one.</em></h2>
+          <p class="lede">Free. Open source. Offline by design. Give Draku a folder and get your files back — named, dated, guarded and lighter.</p>
+          <div class="hero__actions">
+            <a class="btn btn--bone" href="#open" data-repo>Download Draku</a>
+            <a class="btn btn--line" href="#open" data-repo>Read the source</a>
+          </div>
+          <p class="final__os">macOS · Windows · Linux &nbsp;—&nbsp; phone gallery extension coming next</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <a class="nav__brand" href="#top"><span class="nav__avatar"><img src="images/draku.jpg" alt="" width="28" height="28"></span><span class="nav__word">Draku</span></a>
+      <p class="foot__tag">Your files, finally understood.</p>
+      <p class="foot__meta">Built by <a href="#top">@Devansh</a> · MIT licensed · No cookies on this page, either.</p>
+    </div>
+  </footer>
+
+  <script src="js/shader.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

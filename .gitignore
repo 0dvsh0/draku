@@ -1,0 +1,23 @@
+# --- app build output -------------------------------------------------------
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/gen/schemas/
+app/tsconfig.tsbuildinfo
+
+# --- generated bundle resources --------------------------------------------
+# DirectML.dll is copied out of the ONNX Runtime build by prepare-bundle.mjs.
+app/src-tauri/resources/DirectML.dll
+# The EmbeddingGemma weights (~219 MB) are fetched with scripts/fetch-model.mjs
+# and bundled into the installer; they are not committed to git.
+app/src-tauri/resources/models/embeddinggemma/*
+!app/src-tauri/resources/models/embeddinggemma/.gitkeep
+
+# --- local noise ------------------------------------------------------------
+*.log
+check*.log
+npm-test.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

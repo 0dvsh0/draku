@@ -1,0 +1,7 @@
+# Tauri for the shell; same cache every machine should ignore.
+node_modules
+dist
+src-tauri/target
+src-tauri/gen/schemas
+.vscode
+*.log

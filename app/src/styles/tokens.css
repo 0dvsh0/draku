@@ -1,0 +1,64 @@
+/* ============================================================================
+   DRAKU DESIGN TOKENS — the mascot, in CSS custom properties.
+   Draku: black fluffy cat · crimson bat wings · round white-ringed eyes
+   full of black flames. One-to-one with site/css/style.css.
+   ========================================================================== */
+
+:root {
+  /* fur — the app's own depth ladder */
+  --fur-0: #050405;  /* deepest creeping fur · app background */
+  --fur-1: #080708;  /* fur + outlines · panels */
+  --fur-2: #0f0d0e;  /* raised surface */
+  --fur-3: #171415;  /* raised surface 2 */
+  --fur-4: #221e1f;  /* border surfaces, inputs */
+
+  /* bone — the white of his eyes */
+  --bone: #EAE6E6;   /* primary text */
+  --bone-2: #c9c3c2; /* dimmed bone */
+
+  /* ash — the grey he was born over */
+  --ash: #9D928F;    /* muted text */
+  --ash-2: #6f6765;
+  --ash-3: #3a3435;
+
+  /* wing — the crimson */
+  --wing: #841E28;       /* primary action */
+  --wing-hi: #A42A36;    /* hover */
+  --wing-glow: #C2414E;  /* accent + glow */
+  --wing-lo: #6C1620;    /* pressed */
+  --iris: #7A1D25;       /* iris */
+
+  /* hairlines */
+  --line: rgba(234, 230, 230, .08);
+  --line-2: rgba(234, 230, 230, .14);
+
+  /* type */
+  --f-sans: "Inter Tight Variable", "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-serif: "Instrument Serif", Georgia, serif;
+  --f-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* radii — soft like fur */
+  --r-s: 10px;
+  --r-m: 18px;
+  --r-l: 28px;
+
+  /* motion — calm, no bounce */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur-1: 140ms;
+  --dur-2: 240ms;
+
+  /* glow shadow (the wing-glow) */
+  --glow: 0 0 0 1px rgba(194, 65, 78, .28), 0 14px 52px -14px rgba(194, 65, 78, .5);
+  --shadow: 0 24px 70px -24px rgba(0, 0, 0, .9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
