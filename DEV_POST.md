@@ -181,7 +181,7 @@ pub fn judge(s: &Signals) -> Verdict {
 
 ### Verified, not vibes
 
-- **42 cargo tests on the full OCR build** — EXIF GPS scrubbing, redaction box math, and an end-to-end semantic query against the bundled weights. **41 more on the light build** (`--no-default-features`) for machines that can't run PaddleOCR.
+- **42 cargo tests on the full OCR build** — EXIF GPS scrubbing, redaction box math, and an end-to-end semantic query against the bundled weights. **41 of them also run on the light build** (`--no-default-features`) for machines that can't use PaddleOCR — only the one OCR-dependent test drops out; dates, duplicates, scoring, embeddings and actions all stay covered.
 - **The installer ships with its own lie detector.** `scripts/smoke-test-installer.mjs`, wired into CI, silent-installs the NSIS package on a Windows runner and verifies every critical bundle: `draku.exe`, `DirectML.dll`, all four OCR models, all six embedding files.
 - **Checksums published with every release**, so the 182 MiB you download is the 182 MiB that was verified: `SHA256: 19473E9A5AEC88BDE82DF50CD697E7A9450A0B0EA88B49E65B57F89843E52791`.
 
@@ -230,7 +230,7 @@ That silence — two seconds where nothing audibly transmits, where the laptop d
 ## Prize Categories
 
 - **Best Use of Gemma ($200)** — Google's open-weights **EmbeddingGemma-300M** is the product's semantic engine, not an accessory: the shipped Windows installer bundles the 4-bit ONNX weights, tokenizer, and external initializer, loaded in memory by fastembed + ONNX Runtime with DirectML acceleration. Every semantic search ("internet password" → the router login, zero keyword overlap) and every human-readable file name originates from a Gemma-family model executing fully offline.
-- **Best Use of GitHub Copilot ($100)** — the entire build-and-verify loop is automated with **GitHub Actions** (`ci.yml`): the frontend suite (Vitest + strict `tsc`), the light and full-OCR cargo test suites with a cached model, and a Windows runner job that builds the NSIS installer, **silent-installs it**, and verifies every bundled file — `draku.exe`, `DirectML.dll`, all 4 OCR models, all 6 embedding files — before any release can be tagged.
+- **Best Use of GitHub Copilot ($100)** — the entire build-and-verify loop is automated with **GitHub Actions on every push and pull request** (`ci.yml`): the frontend suite (Vitest + strict `tsc`), the light and full-OCR cargo test suites with a cached model, and a Windows runner job that builds the NSIS installer, **silent-installs it**, and verifies every bundled file — `draku.exe`, `DirectML.dll`, all 4 OCR models, all 6 embedding files.
 
 ---
 
