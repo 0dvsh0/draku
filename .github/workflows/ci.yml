@@ -56,14 +56,15 @@ jobs:
         run: |
           # Test binaries statically import DirectML.dll (ort's prebuilt ONNX
           # Runtime with the DirectML execution provider); runners have no
-          # system copy. The Windows loader resolves static imports through
-          # PATH, so we extract the DLL into a clean step-owned directory and
-          # append it to PATH via $GITHUB_ENV - no writes into the (cache
-          # restored) target tree are required for loading. A best-effort copy
-          # beside the binaries is kept as extra insurance.
+          # system copy. Stage the DLL OUTSIDE the workspace (this image's
+          # workspace sandbox blocks managed-code writes into cache-restored
+          # dirs) and add it to PATH as the first directory, written as a FULL
+          # path because this runner replaces GITHUB_ENV PATH entries rather
+          # than appending. A native-tool fallback copies it beside the
+          # binaries as extra insurance.
           $ErrorActionPreference = "Stop"
-          $dml = Join-Path $env:GITHUB_WORKSPACE "dml-stage"
-          New-Item -ItemType Directory -Force -Path $dml | Out-Null
+          $stage = Join-Path $env:USERPROFILE "dml-stage"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
           $cache = Join-Path $env:USERPROFILE ".cache"
           $cache = Join-Path $cache "ort"
@@ -84,30 +85,33 @@ jobs:
           if (-not $dll) { throw "DirectML.dll could not be obtained" }
           Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
 
-          $dest = Join-Path $dml "DirectML.dll"
-          Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force
-          if (-not (Test-Path -LiteralPath $dest)) { throw "copy into dml-stage failed: $dest" }
-          Write-Output "staged: $dest ($((Get-Item -LiteralPath $dest).Length) bytes)"
+          Copy-Item -LiteralPath $dll.FullName -Destination (Join-Path $stage "DirectML.dll") -Force
+          $stagedFile = Get-Item -LiteralPath (Join-Path $stage "DirectML.dll")
+          if ($stagedFile.Length -lt 10000000) { throw "staged DirectML.dll too small" }
+          Write-Output "staged outside workspace: $($stagedFile.FullName) ($($stagedFile.Length) bytes)"
 
-          # GITHUB_ENV is a file when set; embed the FULL PATH (dml-stage
-          # first) because some runner versions replace PATH entries rather
-          # than appending - cargo and friends must stay resolvable.
           if ($env:GITHUB_ENV) {
-            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml;$env:PATH"
-            Write-Output "wrote full PATH via GITHUB_ENV (dml-stage first)"
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$stage;$env:PATH"
+            Write-Output "wrote full PATH via GITHUB_ENV (stage first)"
           }
 
-          # Extra insurance: copy beside the test binaries too. Non-fatal so a
-          # quirk in the cache-restored target tree can never block the run.
+          # Insurance: copy beside the test binaries using a NATIVE tool
+          # (robocopy), which is not subject to the sandbox quirk that
+          # affects pwsh/.NET writes in the restored target tree. Non-fatal.
           try {
-            $deps = Join-Path (Join-Path (Join-Path $env:GITHUB_WORKSPACE "app") "src-tauri") "target"
-            $deps = Join-Path (Join-Path $deps "debug") "deps"
-            if (Test-Path -LiteralPath (Join-Path $deps "..")) {
-              [System.IO.File]::Copy($dest, (Join-Path $deps "DirectML.dll"), $true)
-              Write-Output "also copied beside test binaries"
+            $deps = Join-Path $env:GITHUB_WORKSPACE "app"
+            $deps = Join-Path $deps "src-tauri"
+            $deps = Join-Path $deps "target"
+            $deps = Join-Path $deps "debug"
+            $deps = Join-Path $deps "deps"
+            robocopy $stage $deps "DirectML.dll" /NJH /NJS /NP | Out-Null
+            if ((Test-Path -LiteralPath (Join-Path $deps "DirectML.dll")) -and ((Get-Item -LiteralPath (Join-Path $deps "DirectML.dll")).Length -gt 10000000)) {
+              Write-Output "also staged beside test binaries"
+            } else {
+              Write-Output "note: beside-binaries robocopy did not land; relying on PATH"
             }
           } catch {
-            Write-Output "note: beside-binaries copy skipped: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
+            Write-Output "note: beside-binaries copy skipped: $($_.Exception.Message)"
           }
       - name: Light build (no OCR)
         run: cargo test --locked --no-default-features
@@ -147,53 +151,82 @@ jobs:
         run: |
           # tauri-build validates bundle.resources before compiling, so a real
           # (non-empty) DirectML.dll must exist in resources/ on a fresh runner.
-          # prepare-bundle.mjs keeps this staged copy when ort has not placed
-          # one beside the build output yet.
+          # The DLL is acquired once into a directory OUTSIDE the workspace
+          # (this image's workspace sandbox blocks managed-code writes) and
+          # then placed into resources/ via a native-tool fallback chain,
+          # because native tools are unaffected by that quirk.
           $ErrorActionPreference = "Stop"
+          $stage = Join-Path $env:USERPROFILE "dml-stage"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          $hostDll = Join-Path $stage "DirectML.dll"
+          if (-not ((Test-Path -LiteralPath $hostDll)) -or ((Get-Item -LiteralPath $hostDll).Length -lt 10000000)) {
+            $cache = Join-Path $env:USERPROFILE ".cache"
+            $cache = Join-Path $cache "ort"
+            $dll = $null
+            if (Test-Path -LiteralPath $cache) {
+              $dll = Get-ChildItem -LiteralPath $cache -Recurse -Filter "DirectML.dll" -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 10000000 } | Select-Object -First 1
+            }
+            if (-not $dll) {
+              Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
+              $pkg = Join-Path $env:TEMP "directml-1.15.4.nupkg"
+              Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile $pkg
+              $ext = Join-Path $env:TEMP "directml-1.15.4"
+              New-Item -ItemType Directory -Force -Path $ext | Out-Null
+              tar.exe -xf $pkg -C $ext
+              $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
+              if (-not $dll) { $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Select-Object -First 1 }
+            }
+            if (-not $dll) { throw "DirectML.dll could not be obtained" }
+            Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
+            Copy-Item -LiteralPath $dll.FullName -Destination $hostDll -Force
+          }
+          if ((Get-Item -LiteralPath $hostDll).Length -lt 10000000) { throw "staged DirectML.dll too small" }
+          Write-Output "host staged: $hostDll ($((Get-Item -LiteralPath $hostDll).Length) bytes)"
+
           $app = Join-Path $env:GITHUB_WORKSPACE "app"
           $resources = Join-Path $app "src-tauri"
           $resources = Join-Path $resources "resources"
           New-Item -ItemType Directory -Force -Path $resources | Out-Null
-
           $dest = Join-Path $resources "DirectML.dll"
-          $staged = $false
-          if (Test-Path -LiteralPath $dest) {
-            $item = Get-Item -LiteralPath $dest
-            $staged = $item.Length -gt 10000000
-          }
-          if (-not $staged) {
-            Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
-            $pkg = Join-Path $env:TEMP "directml-1.15.4.nupkg"
-            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile $pkg
-            $ext = Join-Path $env:TEMP "directml-1.15.4"
-            New-Item -ItemType Directory -Force -Path $ext | Out-Null
-            tar.exe -xf $pkg -C $ext
-            $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
-            if (-not $dll) { $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Select-Object -First 1 }
-            if (-not $dll) { throw "DirectML.dll could not be obtained" }
-            Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
+
+          if (-not (Test-Path -LiteralPath $dest)) {
+            $placed = $false
             try {
-              Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force -ErrorAction Stop
+              Copy-Item -LiteralPath $hostDll -Destination $dest -Force -ErrorAction Stop
+              $placed = Test-Path -LiteralPath $dest
+              Write-Output "placed via Copy-Item: $placed"
             } catch {
-              Write-Output "Copy-Item failed ($($_.Exception.Message)); retrying via [IO.File]::Copy"
-              [System.IO.File]::Copy($dll.FullName, $dest, $true)
+              Write-Output "Copy-Item failed: $($_.Exception.Message)"
             }
+            if (-not $placed) {
+              try {
+                [System.IO.File]::Copy($hostDll, $dest, $true)
+                $placed = Test-Path -LiteralPath $dest
+                Write-Output "placed via [IO.File]::Copy: $placed"
+              } catch {
+                Write-Output "[IO.File]::Copy failed: $($_.Exception.Message)"
+              }
+            }
+            if (-not $placed) {
+              robocopy $stage $resources "DirectML.dll" /NJH /NJS /NP | Out-Null
+              $placed = (Test-Path -LiteralPath $dest) -and ((Get-Item -LiteralPath $dest).Length -gt 10000000)
+              Write-Output "placed via robocopy: $placed"
+            }
+            if (-not $placed) {
+              cmd /c copy /Y "$hostDll" "$dest" | Out-Null
+              $placed = (Test-Path -LiteralPath $dest) -and ((Get-Item -LiteralPath $dest).Length -gt 10000000)
+              Write-Output "placed via cmd copy: $placed"
+            }
+            if (-not $placed) { throw "could not place DirectML.dll into resources/" }
           }
-          if (-not (Test-Path -LiteralPath $dest)) { throw "staged file missing: $dest" }
+
           $item = Get-Item -LiteralPath $dest
+          if ($item.Length -lt 10000000) { throw "resources DirectML.dll too small" }
           Write-Output "resources/DirectML.dll ready: $dest ($($item.Length) bytes)"
 
-          # Insurance for the release build and the installer smoke test: make
-          # the DirectML host directory resolvable through PATH as well.
-          $dml = Join-Path $env:GITHUB_WORKSPACE "dml-stage"
-          New-Item -ItemType Directory -Force -Path $dml | Out-Null
-          $dmlDest = Join-Path $dml "DirectML.dll"
-          if (-not (Test-Path -LiteralPath $dmlDest)) {
-            [System.IO.File]::Copy($dest, $dmlDest, $true)
-          }
           if ($env:GITHUB_ENV) {
-            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml;$env:PATH"
-            Write-Output "wrote full PATH via GITHUB_ENV (dml-stage first)"
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$stage;$env:PATH"
+            Write-Output "wrote full PATH via GITHUB_ENV (stage first)"
           }
       - name: Build NSIS installer
         run: npm run tauri:release
