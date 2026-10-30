@@ -83,9 +83,9 @@ jobs:
         run: node scripts/fetch-model.mjs
       - run: npm ci
       - name: Build NSIS installer
-        run: npx tauri build
+        run: npm run tauri:release
       - name: Install smoke test
-        run: node scripts/smoke-test-installer.mjs
+        run: npm run smoke:installer
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:

@@ -12,7 +12,7 @@ This guide details the exact steps and script for recording the 60-second airpla
    - Built with full offline bundled resources:
      ```pwsh
      cd app
-     npm run tauri build
+     npm run tauri:release
      ```
    - Or launch the development build:
      ```pwsh

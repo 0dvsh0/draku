@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "tauri:release": "tauri build --config src-tauri/tauri.release.conf.json",
     "check": "tsc -b",
     "test": "vitest run",
     "smoke:installer": "node scripts/smoke-test-installer.mjs"

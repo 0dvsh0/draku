@@ -89,14 +89,16 @@ work; Protect reports what it can from filenames and metadata.
 ```pwsh
 cd app
 node scripts/fetch-model.mjs
-npm run tauri build
+npm run tauri:release
 npm run smoke:installer
 ```
 
 This produces an NSIS installer in `app/src-tauri/target/release/bundle/nsis/`.
-`scripts/prepare-bundle.mjs` places `DirectML.dll` beside the executable and
-bundles the EmbeddingGemma model files. `scripts/smoke-test-installer.mjs` performs
-a silent test installation verifying all binaries, OCR models, and embedding weights.
+The release build merges `src-tauri/tauri.release.conf.json` so the generated
+`resources/DirectML.dll` is bundled beside the executable; `scripts/prepare-bundle.mjs`
+copies it into place before packaging, and bundles the EmbeddingGemma model files.
+`scripts/smoke-test-installer.mjs` performs a silent test installation verifying
+all binaries, OCR models, and embedding weights.
 
 ### Release artifacts
 
