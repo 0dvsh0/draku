@@ -6,7 +6,7 @@
 // Runs via tauri.conf.json > build > beforeBundleCommand, after cargo build and
 // before NSIS packaging. No network, no user files touched.
 
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,6 +21,13 @@ const candidates = [
 ];
 
 const source = candidates.find((p) => existsSync(p));
+const staged = existsSync(out) ? statSync(out).size : 0;
+if (!source && staged > 10_000_000) {
+  // CI stages a pinned DirectML.dll into resources/ before building because
+  // ort copies its own only beside targets it has already built.
+  console.log("[draku] using the DirectML.dll staged in resources/");
+  process.exit(0);
+}
 if (!source) {
   if (process.platform === "win32") {
     console.error(

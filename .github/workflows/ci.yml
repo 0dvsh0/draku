@@ -51,18 +51,26 @@ jobs:
         run: node scripts/fetch-model.mjs
       - name: Compile light tests (no-run)
         run: cargo test --locked --no-default-features --no-run
-      - name: Stage ort DLLs beside test binaries
+      - name: Stage DirectML beside test binaries
         shell: pwsh
         run: |
-          # ort-sys copies DirectML.dll somewhere under target/ during compile;
-          # test executables live in target/debug/deps, where Windows cannot
-          # find that import otherwise (runners have no system DirectML).
-          $hits = Get-ChildItem -Path "app/src-tauri/target" -Recurse -Filter DirectML.dll -ErrorAction SilentlyContinue
-          if (-not $hits) { Write-Error "DirectML.dll missing under target/ (ort-sys copy failed)"; exit 1 }
+          # The test binaries statically import DirectML.dll (ort's prebuilt
+          # ONNX Runtime with the DML execution provider). Runners have no
+          # system copy, so we stage one: first ort's own prebuilt cache,
+          # else the exact pinned Microsoft.AI.DirectML from NuGet.
           $deps = "app/src-tauri/target/debug/deps"
           New-Item -ItemType Directory -Force $deps | Out-Null
-          Copy-Item $hits[0].FullName $deps -Force
-          Write-Output "staged $($hits[0].FullName) -> $deps"
+          $dll = Get-ChildItem "$env:USERPROFILE\.cache\ort" -Recurse -Filter DirectML.dll -ErrorAction SilentlyContinue |
+                 Where-Object { $_.Length -gt 10_000_000 } | Select-Object -First 1
+          if (-not $dll) {
+            Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
+            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile "$env:TEMP\dml.nupkg"
+            Expand-Archive "$env:TEMP\dml.nupkg" "$env:TEMP\dml" -Force
+            $dll = Get-ChildItem "$env:TEMP\dml\bin" -Recurse -Filter DirectML.dll |
+                   Where-Object { $_.FullName -match "x64" } | Select-Object -First 1
+          }
+          Copy-Item $dll.FullName $deps -Force
+          Write-Output "staged $($dll.FullName) -> $deps"
       - name: Light build (no OCR)
         run: cargo test --locked --no-default-features
       - name: Full build (PaddleOCR)
@@ -96,6 +104,26 @@ jobs:
         if: steps.model-cache.outputs.cache-hit != 'true'
         run: node scripts/fetch-model.mjs
       - run: npm ci
+      - name: Stage DirectML into resources
+        shell: pwsh
+        run: |
+          # tauri-build validates bundle.resources before compiling, so a real
+          # (non-empty) DirectML.dll must exist in resources/ on a fresh runner.
+          # prepare-bundle.mjs keeps this staged copy when ort has not placed
+          # one beside the build output yet.
+          $dest = "app/src-tauri/resources/DirectML.dll"
+          New-Item -ItemType Directory -Force "app/src-tauri/resources" | Out-Null
+          if ((Test-Path $dest) -and ((Get-Item $dest).Length -gt 10_000_000)) {
+            Write-Output "resources/DirectML.dll already staged"
+          } else {
+            Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
+            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile "$env:TEMP\dml.nupkg"
+            Expand-Archive "$env:TEMP\dml.nupkg" "$env:TEMP\dml" -Force
+            $dll = Get-ChildItem "$env:TEMP\dml\bin" -Recurse -Filter DirectML.dll |
+                   Where-Object { $_.FullName -match "x64" } | Select-Object -First 1
+            Copy-Item $dll.FullName $dest -Force
+            Write-Output "staged $($dll.FullName) -> $dest"
+          }
       - name: Build NSIS installer
         run: npm run tauri:release
       - name: Install smoke test
