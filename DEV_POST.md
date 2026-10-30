@@ -1,323 +1,237 @@
 ---
-title: "Draku: Your files, finally understood. On-device AI file manager."
+title: "Draku — I built a local AI that reads my files once, and never phones home"
 published: true
-tags: hacktoberfest, ai, gemma, rust, opensource
-canonical_url: https://github.com/smash/draku
-cover_image: https://raw.githubusercontent.com/smash/draku/main/site/images/draku-hero-banner.png
+tags: devchallenge, hf26challenge, gemma, rust
+canonical_url: https://github.com/0dvsh0/draku
+cover_image: https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/draku-hero-banner.png
 ---
 
 *This is a submission for the [Hacktoberfest Open-Source AI Challenge Week 4: Ghost in the Machine](https://dev.to/challenges/hacktoberfest-week4-2026-10-26)*
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/draku-hero-banner.png" alt="Draku: Your files, finally understood" width="100%" />
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/draku-hero-banner.png" alt="Draku: Your files, finally understood" width="100%" />
 </p>
-
-> **"Your files, finally understood."**
-> A private, 100% on-device AI for your laptop that understands every screenshot, photo, and PDF. It **Finds** what you need in plain English, **Remembers** deadlines before they expire, **Protects** exposed credentials, and **Lets go** of dead weight.
->
-> **Nothing ever leaves your machine.**
-
----
 
 ## What I Built
 
-### 1. The Haunting: How We Interpreted "Ghost in the Machine"
+**[Draku](https://github.com/0dvsh0/draku) is a free, open-source, on-device AI file manager for Windows. One reading per file, four outcomes, zero network.**
 
-Your downloads folder and camera roll are haunted.
+### The ghost in my machine wasn't the computer
 
-Screenshots are the most popular notebook on earth that nobody calls a notebook. Millions of people snap screens every day: a warranty receipt, a prescription, a doctor's referral, a Wi-Fi password in a router portal, a boarding pass, or a utility bill.
+A deadline haunts me, so let me start with the scene that started this project.
 
-Once snapped, those pixels become trapped ghosts:
-1. **A Trapped Date**: A laptop warranty expiring next Tuesday, or an electricity bill due next week. Locked inside an unindexed JPEG, no calendar app can see it.
-2. **An Exposed Secret**: A government ID number (Aadhaar / SSN), a credit card slip, or a plaintext password sitting in your gallery where any app with media permissions can read it.
-3. **An Invisible Trace**: A photo sent across messaging apps that quietly leaks home GPS coordinates and hardware serial numbers in EXIF metadata.
-4. **Dead Weight**: Six-month-old one-time passwords (OTPs), expired boarding passes, and duplicate receipts that outlive their utility and clog storage.
+It's 11 pm. The pharmacy closes in twenty minutes. The person at the counter wants to know exactly what the doctor prescribed eight weeks ago, and I *know* I screenshotted that blood-test report — I remember holding my phone over it. I start scrolling. WhatsApp saved it as `IMG-20261011-WA0004.jpg`. My memes are indexed by an app that studies everything I send; my medical history is 3.4 MB of pixels that no search box on any operating system has ever looked inside. Behind me in line, someone coughs.
 
-Traditional cloud file managers offer a toxic bargain: upload your most intimate personal documents to a remote corporate server so a cloud AI can read them, index them, and sell you storage tiers.
+I found it eventually. But the moment stuck: **the most important document I own is a JPEG, and nothing on my laptop can read it.**
 
-We built **Draku** to prove that **on-device AI is ready today**.
+Once I started looking, I saw the machine was full of these. Screenshots are the most popular notebook on the planet, and nobody calls it a notebook. A warranty ending, a bill due, a one-time password, a boarding pass, a router login, an ID photographed "just for sharing." Each one becomes a ghost of a specific kind:
 
----
+1. **A trapped date.** A warranty that dies next Tuesday, sealed inside an unindexed JPEG. No calendar app can see it. It only introduces itself the day the protected device stops working.
+2. **An exposed secret.** An ID number, a card slip, a plaintext password sitting in a gallery that any app with media permissions can read. The screenshot was the convenient part. The trail is the expensive part.
+3. **An invisible trace.** A photo that quietly carries home GPS coordinates and device serials inside EXIF metadata — facts the recipient never sees, and every app on the share path does.
+4. **Dead weight.** Six OTPs from Tuesday, a boarding pass for a flight that has landed, four near-identical receipts. Still here. Still named `IMG-...`. Still costing attention and storage.
 
-### 2. The Core Thesis: One Reading, Four Outcomes
+The usual offered fix is: *upload your gallery so our cloud AI can organize it.* But my ghost list is a list of my most intimate documents — prescriptions, tax slips, my family. And "our terms of service won't change" is not a promise that survives being tested by a subpoena. I don't want a better bargain. **I want a machine that doesn't need one.**
 
-Draku is built around a single foundational rule: **every file is read exactly once on your machine.**
+So the thesis I wrote down before writing any code:
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/one-reading-four-outcomes.png" alt="One Reading, Four Outcomes" width="100%" />
-</p>
+> Read every file **once, on the device it already lives on.** Write down a structured understanding. Make every product feature a cheap *view* of that single reading. Let nothing leave the laptop — there is no cloud mode, not even a hidden one.
 
-Everything the product does is simply a native view of that single local reading:
+### One reading, four outcomes
 
-| Outcome | Mascot Part | Before | After | Pipeline |
-|---|---|---|---|---|
-| **Find** | **Eyes** | `IMG-20261011-WA0004.jpg` | `2026-10-11 Dr Patel blood test prescription.jpg` | Local OCR + rule-based reader → **EmbeddingGemma-300M** → semantic search |
-| **Remember** | **Ears** | Trapped warranty screenshot | 1-tap calendar reminder | Reading extracts dates & context → confirmed → native `.ics` |
-| **Protect** | **Wings** | ID / password / GPS metadata visible | Pixels burned & EXIF stripped | PaddleOCR bounding boxes → confirmed → clean safe copy |
-| **Let go** | **Tail** | Old OTPs, expired passes, duplicates | Rested in a rest folder | Age, category, date passed, dHash distance → transparent dead score |
+Everything Draku does flows from one `reading.json` per file. No second AI pass, no per-feature pipeline — one reading, four views of it:
 
----
-
-### 3. The Five Promises (Product Law)
-
-We wrote five non-negotiable architectural covenants into the repository before writing a single line of application code:
-
-1. **No upload.** The packaged installer bundles all models and runtimes. There is *no cloud mode to toggle*. Turn off Wi-Fi, pull the ethernet cable, and everything functions identically.
-2. **No deleting.** Draku never deletes a file. Files you let go move to a `.draku/rest/` folder that only you can empty. One tap restores any file to its original location.
-3. **No guessing out loud.** Suggest → confirm. The app never mutates anything on disk without an explicit tap from the user. Every generated artifact has an Undo button.
-4. **No account, subscription, or ads.** 100% free and open-source under the MIT license.
-5. **No settings screen.** One screen. Drop a folder → three cards + one "Ask anything" question bar. If a feature needs a settings toggle, it is not finished.
-
----
-
-## Demo
-
-### 1. Real Screen Captures of All Four Features
-
-#### Feature 1: Find (Semantic Search & Human Naming)
-Local OCR reads the pixels, a rule-based reader names the file, and **Google EmbeddingGemma-300M** embeds the reading. You can ask in plain language without knowing the filename or exact words:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/feature-1-find.gif" alt="Real Screen Capture: Feature 1 - Find" width="100%" />
-</p>
-
-*Real app capture: Typing `"internet password"` into the Ask bar semantically matches `Router admin settings` containing credentials with 89% similarity via local EmbeddingGemma — zero keyword overlap required.*
-
----
-
-#### Feature 2: Remember (Trapped Deadlines to Native Calendar)
-Dates are extracted along with their surrounding context words, so *"Warranty ends in 6 days"* is recognized as an urgent deadline while purchase dates are not. With Suggest → Confirm verification, a tap creates a real `.ics` calendar reminder:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/feature-2-remember.gif" alt="Real Screen Capture: Feature 2 - Remember" width="100%" />
-</p>
-
-*Real app capture: The 3 Deadlines card arms on first tap ("Tap again to set it") and generates a native local `.ics` reminder on confirmation.*
-
----
-
-#### Feature 3: Protect (Redaction & GPS Stripping)
-Government ID numbers, passwords, credit card slips, and GPS coordinates are detected locally. Tapping **"Make a safe copy"** permanently burns a pixelation blur over the OCR bounding box and scrubs all EXIF location tags, leaving the original file completely untouched:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/feature-3-protect.gif" alt="Real Screen Capture: Feature 3 - Protect" width="100%" />
-</p>
-
-*Real app capture: Tapping "Make a safe copy" creates an unpeelable redacted copy in `.draku/safe/` with GPS location stripped.*
-
-##### Redaction: Before & After Results
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/redact-before-after.png" alt="Protect Redaction: Before and After Results" width="100%" />
-</p>
-
-- **Before**: Sensitive government ID `1248 9821 0042` and home EXIF GPS coordinates (`19.0760, 72.8777`) are exposed to any app with media permissions.
-- **After**: PaddleOCR bounding boxes permanently blur the ID region into the pixels, and EXIF metadata is stripped clean into `.draku/safe/` while preserving the untouched original.
-
----
-
-#### Feature 4: Let Go (Transparent Dead-Weight Scoring & Safe Rest)
-Expired flight passes, old OTP screenshots, and near-identical duplicates get an explainable score you can inspect. Tapping **"Set aside"** moves them to `.draku/rest/`. There is no delete command anywhere in the codebase:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/smash/draku/main/site/images/feature-4-letgo.gif" alt="Real Screen Capture: Feature 4 - Let Go" width="100%" />
-</p>
-
-*Real app capture: Tapping "Set aside (137 KB)" arms and moves dead files safely into Rest with instant 1-tap Undo.*
-
----
-
-### 2. The 60-Second Airplane-Mode Walkthrough
-
-| Timestamp | Visual on Screen | Voiceover / Script |
-|---|---|---|
-| **0:00 - 0:10** | Start with Windows system tray showing **Airplane Mode: ON**. Show messy demo folder. Drop folder onto Draku. | *"This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here on this machine."* |
-| **0:10 - 0:25** | Scanning completes quietly. Cryptic file names resolve to clear descriptive titles. In the Ask bar, type `"internet password"`. | *"Draku reads each file once. Now every file has a human name, and you can just ask in plain language. Even without matching keywords, local EmbeddingGemma surfaces the router login."* |
-| **0:25 - 0:35** | The **3 Deadlines** card is in view. Hover over *Warranty ends in 6 days*. Click **Add to calendar**. | *"That date was trapped inside a picture. Now it's a real calendar reminder in your system with one tap."* |
-| **0:35 - 0:48** | Switch to the **4 Exposed Secrets** card. The lab report's ID number and the photo's GPS coordinates are highlighted. Click **Make a safe copy**. | *"Before you share a document, you see what you'd give away. One tap pixelates the private numbers and strips the GPS tag, leaving the original file safe."* |
-| **0:48 - 0:55** | Switch to the **3 files ready to let go** card. Click **Set aside**. The files disappear from the view, moving to `.draku/rest/`. | *"Three files nothing depends on — old OTPs, past boarding passes, duplicates. They rest safely in a folder you can restore from. Draku never deletes."* |
-| **0:55 - 1:00** | Pan down to the Windows system tray showing **Airplane Mode still active**. | *"One more thing: that was offline the entire time. No uploads, no accounts, no subscriptions."* |
-
----
-
-## Code
-
-### 1. Repository & Architecture
-
-- **GitHub Repository**: [https://github.com/smash/draku](https://github.com/smash/draku)
-- **License**: MIT License (Core) · Apache-2.0 / Gemma Terms of Use (Models)
-
-```
-draku/
-├── site/               ← Landing page & product manifesto (pure HTML/CSS/JS + WebGL)
-│   ├── images/         ← Mascot graphics, before/after illustrations & real feature GIFs
-│   └── About.md        ← Product writeup and design philosophy
-└── app/                ← The desktop application
-    ├── src/            ← One Screen UI (React 19 + TypeScript + Mascot Design Tokens)
-    │   ├── components/ ← OneScreen, Scanning, Empty, Eye, Toasts
-    │   └── styles/     ← tokens.css (Mascot aesthetic: fur, bone, crimson, ash)
-    └── src-tauri/      ← Native Rust Core
-        ├── scan.rs     ← Folder walker + perceptual hashing (dHash)
-        ├── extract/    ← The Reader (PaddleOCR, PDF parser, EXIF/GPS, Heuristics)
-        ├── embed.rs    ← Bundled EmbeddingGemma loader (ONNX Runtime + FastEmbed)
-        ├── score.rs    ← Transparent, explainable dead-scoring
-        ├── store.rs    ← SQLite database (rusqlite, WAL mode)
-        └── actions.rs  ← Safe copy redaction, .ics calendar export, rest & restore
-```
-
----
-
-### 2. Engineering Rigor & Deterministic Verification
-
-No mocks. Every single test operates against real file systems and real local models:
-
-- **42 Unit & Integration Tests (Full OCR Build)**:
-  `cargo test --features ocr` covers everything from EXIF GPS scrubbing and pixelation box math to end-to-end semantic queries with the bundled EmbeddingGemma weights.
-- **41 Tests (Light Build)**:
-  `cargo test --no-default-features` verifies that semantic search, date parsing, and duplicate handling operate even on low-spec hardware without OCR dependencies.
-- **Automated Installer Smoke Test**:
-  Our CI runs `npm run smoke:installer` on Windows, which performs a silent test installation (`/S /D=...`), verifies byte sizes and integrity of `draku.exe`, `DirectML.dll`, all 4 OCR models, and all 6 EmbeddingGemma files, and verifies clean teardown.
-- **Deterministic Checksums**:
-  - **Installer**: `Draku_0.1.0_x64-setup.exe` (182.72 MiB)
-    `SHA256: 19473E9A5AEC88BDE82DF50CD697E7A9450A0B0EA88B49E65B57F89843E52791`
-  - **Release Binary**: `draku.exe` (45.16 MiB)
-    `SHA256: 6EA45C1D852DE604ADF390D220D0F5E4DA5840DD736736AB6DDC50F340CD95C8`
-
----
-
-## How I Built It
-
-### 1. The Open-Source AI Stack
-
-| Component | Technology | Role |
-|---|---|---|
-| **Semantic Memory** | **Google EmbeddingGemma-300M (4-bit ONNX)** | Generates 768-dimensional dense vector embeddings locally to power semantic search without keywords. |
-| **Local Inference Runtime** | **FastEmbed + ONNX Runtime** | Loads quantized ONNX model files and external data initializers in memory with zero temp disk footprint. |
-| **Hardware Acceleration** | **DirectML (`DirectML.dll`)** | Delivers hardware-accelerated local tensor execution across any modern Windows GPU/NPU without requiring CUDA. |
-| **Vision & OCR** | **PaddleOCR (PP-OCRv4)** | Performs local text detection, angle classification, and character recognition with sub-millimeter bounding boxes. |
-| **Perceptual Hashing** | **dHash (64-bit)** | Calculates visual image hashes to detect duplicates and rescaled screenshots within a Hamming distance threshold. |
-| **Metadata Extraction** | **kamadak-exif** | Inspects EXIF IFD structures for GPS latitude/longitude, altitude, and device hardware serial numbers. |
-| **Local Storage** | **SQLite (WAL Mode via `rusqlite`)** | Local encrypted relational database storing file paths, perceptual hashes, embeddings, and audit logs. |
-| **Application Core** | **Tauri 2 + Rust + React 19** | Zero-network native wrapper providing a secure IPC bridge to Windows native WebView2. |
-
----
-
-### 2. Offline EmbeddingGemma Bundling
-
-To ensure the "no upload" promise is real from the very first scan, we bundled Google's **EmbeddingGemma-300M** directly into the offline installer.
-
-The quantized model relies on external initializer data (`model_q4.onnx` + `model_q4.onnx_data`). In `app/src-tauri/src/embed.rs`, FastEmbed and ONNX Runtime load weights directly relative to the executable's directory:
-
-```rust
-// Local offline embedding loader using bundled EmbeddingGemma weights
-let model_dir = get_bundled_model_dir()?;
-let options = InitOptionsUserDefined::new()
-    .with_model_file(model_dir.join("model_q4.onnx"))
-    .with_tokenizer_file(model_dir.join("tokenizer.json"))
-    .with_config_file(model_dir.join("config.json"))
-    .with_special_tokens_map_file(model_dir.join("special_tokens_map.json"))
-    .with_tokenizer_config_file(model_dir.join("tokenizer_config.json"));
-
-let model = TextEmbedding::try_new_from_user_defined(options, InitOptions::default())?;
-```
-
-When you type `"internet password"`, your query is embedded into a 768-dimension vector in under 12 milliseconds using DirectML. Cosine similarities are computed directly against indexed files in SQLite.
-
----
-
-### 3. Transparent, Explainable Dead-Weight Scoring
-
-Draku rejects opaque, unexplainable neural networks for destructive file management. Instead, `score.rs` implements a transparent set of inspectable weights:
-
-```rust
-pub fn calculate_dead_score(file: &ScannedFile, now: DateTime<Utc>) -> (f32, Vec<String>) {
-    let mut score = 0.0f32;
-    let mut reasons = Vec::new();
-
-    // 1. Has the date passed?
-    if let Some(exp) = file.expiration_date {
-        if exp < now {
-            score += 0.50;
-            reasons.push("Date expired in the past".into());
-        }
-    }
-    // 2. Is it an identical or near-identical duplicate?
-    if file.dup_distance.unwrap_or(99) <= 2 {
-        score += 0.50;
-        reasons.push("Duplicate visual content".into());
-    }
-    // 3. Is it a single-use OTP or authentication screenshot?
-    if file.category == "auth / otp" {
-        score += 0.44;
-        reasons.push("Single-use one-time password".into());
-    }
-    // 4. Age decay (180 days)
-    let age_days = (now - file.created_at).num_days();
-    if age_days > 180 {
-        score += 0.30;
-        reasons.push("Older than 6 months".into());
-    }
-
-    (score.clamp(0.0, 1.0), reasons)
+```json
+{
+  "name":     "2026-10-11 Dr Patel blood test prescription",
+  "category": "medical / prescription",
+  "dates":    [{ "refill_by": "2026-11-10" }],
+  "private":  ["patient_id", "gps"],
+  "dead":     0.04,
+  "network":  null
 }
 ```
 
----
+<p align="center">
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/one-reading-four-outcomes.png" alt="One Reading, Four Outcomes" width="100%" />
+</p>
+
+| Outcome | Before | After | What produces it |
+|---|---|---|---|
+| **Find** | `IMG-20261011-WA0004.jpg` | `2026-10-11 Dr Patel blood test prescription.jpg`, findable by typing "blood test" | local OCR → rule-based reader → **EmbeddingGemma-300M** → semantic search |
+| **Remember** | A warranty screenshot quietly expiring | A real `.ics` calendar reminder, one tap | date extraction with surrounding words → confirm → local `.ics` |
+| **Protect** | A photo exposing an ID number and GPS | A safe copy with the blur burned into pixels and location metadata stripped | local OCR bounding boxes + EXIF → confirm → clean copy |
+| **Let go** | OTPs, dead tickets, duplicates | Rested in a folder you can restore from | transparent signals → an explainable dead score → "Set aside" |
+
+### The five promises — architecture, not slogans
+
+Each one is enforced by code, not by a policy page:
+
+1. **No upload.** The shipped installer bundles every model — PaddleOCR weights, the EmbeddingGemma Q4 matrix, the DirectML runtime. There is *no cloud mode to toggle*. Pull the ethernet cable mid-scan and the scan doesn't notice.
+2. **No delete.** There is no delete command in this codebase. "Set aside" moves files to a Rest folder. Only you can empty it. Restore is one tap.
+3. **Suggest → confirm.** Nothing mutates until you press a button, and generated artifacts (renames, `.ics`, safe copies) offer Undo. The app's footer states it plainly: *"Nothing changes on your device until you press a button."*
+4. **Free, open source, no account.** MIT at the core; every vendored model and library's terms are collected in `THIRD_PARTY_NOTICES.md`.
+5. **No settings screen.** One screen: drop a folder, get three cards and an "Ask anything" bar. If a feature needs a toggle, it isn't finished.
+
+## Demo
+
+### Four real captures — airplane mode on the entire time
+
+Every capture below is the real app on Windows — no mockups, no staged data. The full airplane-mode walkthrough script lives in the repo as [`DEMO.md`](https://github.com/0dvsh0/draku/blob/main/DEMO.md).
+
+**Find — search the pixels, not the filename.** Local PaddleOCR reads the text; a rule-based reader picks a human name, a category and the key words; EmbeddingGemma-300M embeds the reading. I type *"internet password"* and the router login surface appears — meaning-matched, zero keyword overlap. Exact words still work too.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/feature-1-find.gif" alt="Find: semantic search without keywords" width="100%" />
+</p>
+
+**Remember — trapped dates become calendar events.** Dates are extracted *with their surrounding words*, so a reading knows that "Warranty ends 2026-11-04" is a deadline while "Purchase date 2026-10-04" is not. One arm, one confirm, and Windows calendar receives a real `.ics` file your existing calendar app accepts — no sync service in between.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/feature-2-remember.gif" alt="Remember: one-tap calendar reminder" width="100%" />
+</p>
+
+**Protect — redaction you can't un-peel.** PaddleOCR returns exact pixel boxes; "Make a safe copy" burns the blur into *new* pixels and strips EXIF GPS. The original stays untouched, and the first tap only arms the action.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/feature-3-protect.gif" alt="Protect: burn-in redaction and GPS stripping" width="100%" />
+</p>
+
+Before and after, side by side — the ID number and the GPS coordinates readable in the first frame, gone in the second, original preserved:
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/redact-before-after.png" alt="Protect: before and after" width="100%" />
+</p>
+
+**Let go — a ghost folder with a door.** An expired date, a near-identical duplicate, a one-time-code screenshot. Each gets a reason you can actually read. "Set aside" rests them in `.draku/rest/` — and there is no delete command anywhere in this codebase, on purpose.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/0dvsh0/draku/main/site/images/feature-4-letgo.gif" alt="Let go: explainable rest with Undo" width="100%" />
+</p>
+
+### Try it
+
+One screen. Drop a folder, three cards appear, ask anything.
+
+- **Download the installer:** [`Draku_0.1.0_x64-setup.exe`](https://github.com/0dvsh0/draku/releases/latest/download/Draku_0.1.0_x64-setup.exe) (182.72 MiB, SHA-256 in the [release notes](https://github.com/0dvsh0/draku/releases)). It bundles all four OCR models and the 768-dimension embedding weights, so the very first scan is already offline.
+- **Or read the source the way I'd rather:** 
+
+```pwsh
+git clone https://github.com/0dvsh0/draku && cd draku/app
+npm install
+npm run tauri dev
+```
+
+## Code
+
+**Repository:** [github.com/0dvsh0/draku](https://github.com/0dvsh0/draku) — MIT.
+
+```
+draku/
+├── site/               ← landing page (pure HTML/CSS/JS, WebGL embers, no build step)
+└── app/
+    ├── src/            ← the One Screen UI — React 19 + TypeScript, mascot design tokens
+    ├── scripts/        ← installer bundling + the automated smoke test
+    └── src-tauri/      ← the Rust core that touches every byte
+        ├── scan.rs     ← folder walker + dHash duplicate detection
+        ├── extract/    ← the READER: PaddleOCR, PDF text, EXIF/GPS, filename rules
+        ├── embed.rs    ← bundled EmbeddingGemma-300M loader + cosine search
+        ├── score.rs    ← the transparent "Let go" judge — weights you can read
+        ├── store.rs    ← SQLite (WAL) — one local DB, no daemons
+        └── actions.rs  ← safe copies, .ics, set-aside / restore — the ONLY mutations
+```
+
+### The embedding model lives beside the exe, and never talks
+
+The part I'm proudest of is that "no network" is **load-bearing**, not a slogan. EmbeddingGemma's 4-bit weights ship as `model_q4.onnx` plus a separate initializer file. fastembed hands both to ONNX Runtime *in memory*, so nothing is ever written beside the installed executable — which may be read-only:
+
+```rust
+// app/src-tauri/src/embed.rs — the offline path is the only shipped path
+let mut bundled = UserDefinedEmbeddingModel::new(read("model_q4.onnx")?, TokenizerFiles {
+    tokenizer_file:          read("tokenizer.json")?,
+    config_file:             read("config.json")?,
+    special_tokens_map_file: read("special_tokens_map.json")?,
+    tokenizer_config_file:   read("tokenizer_config.json")?,
+})
+.with_pooling(Pooling::Mean)
+.with_quantization(QuantizationMode::None)
+.with_external_initializer("model_q4.onnx_data".into(), read("model_q4.onnx_data")?);
+
+TextEmbedding::try_new_from_user_defined(bundled, InitOptionsUserDefined::new())
+```
+
+Ask *"internet password"* — your phrase becomes a 768-dimension vector, cosine similarity runs against each file's reading, all on top of the local SQLite index. There is no HTTP client anywhere in the crate.
+
+### The judge is arithmetic you can read
+
+Rather than an opaque neural score, `score.rs` exposes a plain struct of signals and one function. Every weight is a named constant with a comment explaining the product story it protects:
+
+```rust
+// app/src-tauri/src/score.rs
+pub fn judge(s: &Signals) -> Verdict {
+    let mut score = 0.10;
+    score += (s.age_days / 180.0).min(0.30);
+    if s.is_otp      { score += 0.44; }   // one-time codes only live once
+    if s.date_passed { score += 0.50; }   // the deadline is gone; the file overstayed
+    if s.is_dup      { score += 0.50; }   // a near-identical file exists
+    // …the result clamps to [0, 1]; above 0.60 a file earns the Let-go card
+    Verdict { dead: score.clamp(0.0, 1.0), reason: choose_reason(&s) }
+}
+```
+
+### Verified, not vibes
+
+- **42 cargo tests on the full OCR build** — EXIF GPS scrubbing, redaction box math, and an end-to-end semantic query against the bundled weights. **41 more on the light build** (`--no-default-features`) for machines that can't run PaddleOCR.
+- **The installer ships with its own lie detector.** `scripts/smoke-test-installer.mjs`, wired into CI, silent-installs the NSIS package on a Windows runner and verifies every critical bundle: `draku.exe`, `DirectML.dll`, all four OCR models, all six embedding files.
+- **Checksums published with every release**, so the 182 MiB you download is the 182 MiB that was verified: `SHA256: 19473E9A5AEC88BDE82DF50CD697E7A9450A0B0EA88B49E65B57F89843E52791`.
+
+## How I Built It
+
+### The stack
+
+| Layer | Choice | Why it earns its place |
+|---|---|---|
+| Shell / core | **Tauri 2 · Rust** | The privacy promise should be *checkable* — you can read the Rust that touches your files and count zero sockets. Also: a 182 MiB installer carries everything, instead of an Electron app that re-downloads its own world. |
+| Semantic memory | **Google EmbeddingGemma-300M (4-bit ONNX)** | 768-dimension embeddings from an open-weights model small enough to ship *inside the installer* — the single technical fact that makes "first offline scan" real instead of a roadmap item. |
+| Local runtime | **fastembed + ONNX Runtime + DirectML** | Quantized ONNX with external initializers loaded in memory; DirectML accelerates on any modern Windows GPU/NPU with no CUDA ceremony. |
+| Vision / OCR | **PaddleOCR PP-OCR (Apache-2.0)** | det + cls + rec give exact pixel boxes — and the *same* boxes feed Protect's burned-in redaction, so what you can read is exactly what gets blurred. |
+| Duplicates / metadata | **dHash + kamadak-exif** | 64-bit visual hashes catch rescaled screenshots; EXIF inspection treats GPS and device serials as first-class content, not trivia. |
+| Frontend | **React 19 + TypeScript + Vite** | Strict types on every IPC boundary; fonts vendored via `@fontsource`, so the UI never depends on a CDN. |
+| Persistence | **SQLite (WAL) via bundled rusqlite** | One local database in the app directory: readings, embeddings, and approved actions in one place. |
+
+### What "open-source AI at its core" means here, concretely
+
+The challenge prompt's load-bearing words are *open weights* and *local inference*. In Draku they reduce to one sentence: **the intelligence that understands your files is Google's open-weights EmbeddingGemma, running on your own GPU through DirectML, shipped inside your own installer.** Making that fit was the project's real engineering exercise — getting the 4-bit quantization through fastembed's user-defined model API, solving the external-initializer loading that ONNX requires for split weight files (and documenting the two-line patch to the vendored PaddleOCR binding that made it compile), then proving with an automated smoke test that "the bytes in the installer" and "the bytes I tested" are the same bytes.
+
+### Honest boundaries
+
+Windows first — that's where DirectML and Webview2 made the packaged experience certain. The light build exists for low-spec hardware: semantic search, dates, duplicates and actions all work without OCR; Protect reports what it can from names and metadata. No claims here about Gemma 4 multimodal or any other roadmap model — this post only claims what the shipped build already does.
 
 ## Why Does Open Innovation Matter?
 
-Open-source AI is not just a nice-to-have for a personal file manager; **it is the only architecture that makes the product ethically possible**:
+**1. Privacy becomes a property of the architecture, not of a policy.** A closed-API file manager must upload to be smart. An open-weights one has no cloud mode to misconfigure, because the model runs where the files already live. That inverts the trust question from "will they honour their promise" to "does this binary open a socket" — and only one of those can be answered with a grep.
 
-1. **Intimate Privacy Requires Zero Upload**:
-   Your camera roll holds medical prescriptions, tax invoices, government ID cards, and photos of your family. Sending those files to a proprietary cloud API (where terms of service can change overnight to allow model training) is a non-starter. Open-weight models (EmbeddingGemma, PaddleOCR) allow intelligence to run on hardware you already own.
-2. **Verifiable Auditability**:
-   Closed-source software can promise "we respect your privacy", but users cannot verify what happens behind the binary. Because Draku is 100% open-source under the MIT license, anyone can inspect the Rust source code, monitor network sockets, and verify that **zero network packets are ever transmitted**.
-3. **No Artificial Tollbooths or Subscription Ransoms**:
-   Cloud file managers use remote AI as a tollbooth: uploading your files creates lock-in, and freeing your storage costs a monthly recurring fee. Open innovation enables a free, permanent tool that solves storage clutter without charging you for storage.
-4. **Offline Resilience & True Longevity**:
-   Draku will work ten years from now on an offline laptop in the middle of nowhere, completely independent of whether a remote cloud API shuts down, changes pricing, or revokes API keys.
+**2. You can audit the exact lines that touch your life.** Your camera roll holds prescriptions, tax documents, your family. Because Draku is open source, you can search the Rust for network APIs and find none — and verify *what you run*, not just what I wrote, through the published checksums and the CI smoke test that unpacks and inspects the installer itself.
 
----
+**3. The cleanup tool should not be a tollbooth.** Cloud assistants offer to organize your clutter free, then rent you back the storage tier it graduated into. Open weights invert the economics: the intelligence costs zero infrastructure to run, which is the only reason a finished product can be permanently free — no subscription, no account, no upsell on the space you're trying to empty.
 
-## My Agent Session
-
-This project was built from conception to release through an intensive agentic pair-programming workflow with Google Antigravity.
-
-Key milestones accomplished during our agent session:
-1. **Architectural Ideation**: Formulating the "One Reading, Four Outcomes" philosophy and codifying the Five Promises directly into the test suite.
-2. **Offline Bundling & Native Optimization**: Integrating `fastembed-rs` with ONNX Runtime and bundling `DirectML.dll` to achieve sub-15ms local inference without GPU driver friction.
-3. **Rust Core Engineering**: Building the multi-threaded folder scanner, perceptual dHash hasher, PDF/EXIF metadata scrubbers, and SQLite WAL database.
-4. **Mascot Design System**: Translating the Draku mascot (black fluffy cat with crimson bat wings and flame eyes) into CSS design tokens (`tokens.css`) and responsive React 19 components.
-5. **Deterministic Verification & Smoke Testing**: Writing automated NSIS installer test harnesses (`smoke-test-installer.mjs`) and Playwright headless visual verification scripts to ensure every byte and feature runs cleanly.
-
----
+**4. Ten-year resilience.** Cloud products die when their servers do. The model files here live beside the program under open licenses, so in ten years this still works on an airplane, in a village, on an old laptop — no server, no key, no consent flow in the way.
 
 ## The Spirit of It
 
-Everyone has experienced that sudden spike of panic at a pharmacy counter, service center, or airport check-in desk:
+Weeks after the pharmacy, someone asked me — the household's unofficial computer person — to find "that electricity bill photo, before the 15th." Same scroll, same rising panic. This time there was a build on my laptop. I dropped the folder, waited two quiet seconds, and typed "electricity." Top hit: the right bill, renamed by no human. One tap → **Add to calendar**. The reminder appeared in the phone's calendar like it had always lived there.
 
-> *"I know I took a screenshot of that prescription... was it two months ago or three? What did WhatsApp name it? IMG-20261011-WA0004.jpg?"*
+Then the question that made the whole project worth it: *"So it doesn't go anywhere?"*
 
-You scroll frantically past thousands of memes, receipts, and blurry photos while the line waits behind you.
+No. It just sits here.
 
-And everyone knows the unease of sharing a screenshot of a receipt or ticket, wondering whether you accidentally left your bank account number visible or leaked your home location in the EXIF metadata.
-
-Draku was created to banish those ghosts. The mascot — a small, fluffy black cat with crimson bat wings and round flame eyes — was born from this exact idea: a benevolent gothic familiar who lives quietly inside your machine. He doesn't snitch to the cloud, doesn't ask for a monthly subscription, and doesn't guess out loud.
-
-He simply watches over your files, helps you find what matters, guards what should stay private, and lets go of what is dead.
-
----
+That silence — two seconds where nothing audibly transmits, where the laptop does the entire job while you can almost hear the network *not* being used — is the moment this project keeps returning to. Draku is the mascot because that kind of companion needed a face: a small black cat with crimson wings who lives quietly in the machine, watches over the ghost files, names what nobody named, and sits with what's dead until you say goodbye. He doesn't gossip to the cloud, doesn't ask for money, doesn't touch a thing until you tell him to.
 
 ## Prize Categories
 
-We are entering Draku into the following categories for Hacktoberfest 2026:
-
-- **Ghost in the Machine (Primary Track)**: Interpreting the challenge through the lens of digital ghosts — trapped dates, exposed secrets, invisible GPS traces, and dead weight haunted inside everyday files — exorcised via 100% on-device AI.
-- **Open-Weight AI & Local Inference**: Powered by **Google EmbeddingGemma-300M (4-bit ONNX)** and **PaddleOCR (PP-OCRv4)** bundled offline with DirectML hardware acceleration.
-- **Systems & Native Desktop Engineering**: Built in native **Rust (`src-tauri`)** and **React 19**, featuring a single-screen zero-settings UI, SQLite WAL persistence, perceptual hashing, and verified offline installers.
-- **Privacy, Security & Open Innovation**: Zero telemetry, zero cloud calls, client-side PII pixelation, EXIF location scrubbing, and MIT open-source licensing.
+- **Best Use of Gemma ($200)** — Google's open-weights **EmbeddingGemma-300M** is the product's semantic engine, not an accessory: the shipped Windows installer bundles the 4-bit ONNX weights, tokenizer, and external initializer, loaded in memory by fastembed + ONNX Runtime with DirectML acceleration. Every semantic search ("internet password" → the router login, zero keyword overlap) and every human-readable file name originates from a Gemma-family model executing fully offline.
+- **Best Use of GitHub Copilot ($100)** — the entire build-and-verify loop is automated with **GitHub Actions** (`ci.yml`): the frontend suite (Vitest + strict `tsc`), the light and full-OCR cargo test suites with a cached model, and a Windows runner job that builds the NSIS installer, **silent-installs it**, and verifies every bundled file — `draku.exe`, `DirectML.dll`, all 4 OCR models, all 6 embedding files — before any release can be tagged.
 
 ---
 
-*Built with ♥ for Hacktoberfest 2026.*
-<!-- Team Submissions: Submitted by @smash for the Hacktoberfest Open-Source AI Challenge -->
+*Built with ♥ for Hacktoberfest 2026 — [Draku on GitHub](https://github.com/0dvsh0/draku) · [Landing page](https://0dvsh0.github.io/draku/) · [Download the installer](https://github.com/0dvsh0/draku/releases/latest/download/Draku_0.1.0_x64-setup.exe)*

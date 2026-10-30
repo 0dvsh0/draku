@@ -167,6 +167,7 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
 - **Partner angle:** **Gemma** through EmbeddingGemma-300M (open weights, local). PaddleOCR (Apache-2.0) is the local eyes.
 - **Submission:** DEV post (writing carries the most weight), demo video or live link, public code repo, open-innovation rationale, optional DevRelay agent session.
 - **Rule:** every claim in the post, README, landing page and About.md must match what the shipped build actually does. Gemma 4 vision and TabPFN are roadmap, not shipped features.
+- **M11 decisions (Oct 30, 2026):** public repo is `0dvsh0/draku` (main pushed); landing site deploys to `https://0dvsh0.github.io/draku/` via `.github/workflows/pages.yml` (Pages source = GitHub Actions); release `v0.1.0` carries `Draku_0.1.0_x64-setup.exe` + `draku.exe`; all download/source links point there. Prize categories declared in the post: **Best Use of Gemma ($200)** and **Best Use of GitHub Copilot ($100 — Actions-automated CI/installer pipeline)**; overall winner ($250) applies automatically. No agent-session section in the post (user choice).
 
 ## 8. Roadmap / status (do not start a new item before closing the open one)
 
@@ -195,6 +196,11 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
 - [x] **M10 — Ship** — DEV post (`DEV_POST.md`), 60-second airplane-mode demo guide
       (`DEMO.md`), release assets verified (NSIS `182.72 MiB`, SHA-256 documented),
       final claim audit completed across all product materials.
+- [x] **M11 — Publish** — public repo `0dvsh0/draku` pushed; GitHub Pages deploy
+      workflow added (site live); release `v0.1.0` published with installer + exe;
+      landing-page download buttons wired to the real release asset; repo URLs
+      unified everywhere (site, main.js, README, DEV post); DEV post rewritten
+      (story-first, real code snippets, declared Gemma + GitHub Copilot categories).
 
 ## 9. Conventions
 
@@ -206,4 +212,4 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
   prevents path-prefix collisions.
 - All user-visible text stays true to the landing-page voice (short, concrete, no hype).
 
-— Last updated: M10 (Oct 29, 2026)
+— Last updated: M11 (Oct 30, 2026)

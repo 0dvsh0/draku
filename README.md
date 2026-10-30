@@ -9,6 +9,10 @@ what is dead. Nothing leaves your machine.
 
 Built for **Hacktoberfest 2026 · Week 4 — Ghost in the Machine**.
 
+- **Landing page (live):** https://0dvsh0.github.io/draku/
+- **Download the installer:** https://github.com/0dvsh0/draku/releases/latest/download/Draku_0.1.0_x64-setup.exe
+- **Read the source:** https://github.com/0dvsh0/draku
+
 ```
 draku/
 ├── CONTEXT.md     ← project context: plan, stack, tokens, status (read first)
@@ -56,7 +60,9 @@ Runtime · a small transparent scorer for Let go.
 
 ## Run the landing page
 
-Open `site/index.html` in a browser, or serve it (`python -m http.server`).
+Open `site/index.html` in a browser, serve it locally (`python -m http.server`),
+or just use the deployed copy at **https://0dvsh0.github.io/draku/** (deployed
+automatically from `site/` by `.github/workflows/pages.yml`).
 
 ## Run the app
 
@@ -93,6 +99,9 @@ bundles the EmbeddingGemma model files. `scripts/smoke-test-installer.mjs` perfo
 a silent test installation verifying all binaries, OCR models, and embedding weights.
 
 ### Release artifacts
+
+Tagged `v0.1.0` on [GitHub Releases](https://github.com/0dvsh0/draku/releases) —
+the installer there is what the landing page's download button serves.
 
 - **Windows NSIS Installer**: `Draku_0.1.0_x64-setup.exe` (182.72 MiB)
   - `SHA256: 19473E9A5AEC88BDE82DF50CD697E7A9450A0B0EA88B49E65B57F89843E52791`

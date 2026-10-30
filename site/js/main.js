@@ -213,7 +213,7 @@
 
   /* ---------- copy command ---------- */
   $('#copyCmd').addEventListener('click', function () {
-    var txt = 'git clone https://github.com/draku-app/draku && cd draku\n./draku ~/Screenshots ~/Downloads';
+    var txt = 'git clone https://github.com/0dvsh0/draku && cd draku/app\nnpm install && node scripts/fetch-model.mjs\nnpm run tauri dev';
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied. Now go read the code.'); }, function () { toast('Select and copy the commands above.'); });
   });
 })();
