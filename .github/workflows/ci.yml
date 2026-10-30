@@ -56,19 +56,27 @@ jobs:
         run: |
           # The test binaries statically import DirectML.dll (ort's prebuilt
           # ONNX Runtime with the DML execution provider). Runners have no
-          # system copy, so we stage one: first ort's own prebuilt cache,
-          # else the exact pinned Microsoft.AI.DirectML from NuGet.
-          $deps = "app/src-tauri/target/debug/deps"
-          New-Item -ItemType Directory -Force $deps | Out-Null
-          $dll = Get-ChildItem "$env:USERPROFILE\.cache\ort" -Recurse -Filter DirectML.dll -ErrorAction SilentlyContinue |
-                 Where-Object { $_.Length -gt 10_000_000 } | Select-Object -First 1
+          # system copy: stage ort's own cached copy first, else the exact
+          # pinned Microsoft.AI.DirectML version from NuGet.
+          $ErrorActionPreference = "Stop"
+          # this job runs with working-directory app/src-tauri
+          $deps = Join-Path (Get-Location) "target/debug/deps"
+          if (-not (Test-Path $deps)) { New-Item -ItemType Directory -Force $deps | Out-Null }
+          $cache = Join-Path $env:USERPROFILE ".cache\ort"
+          $dll = $null
+          if (Test-Path $cache) {
+            $dll = Get-ChildItem $cache -Recurse -Filter "DirectML.dll" -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 10000000 } | Select-Object -First 1
+          }
           if (-not $dll) {
             Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
-            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile "$env:TEMP\dml.nupkg"
-            Expand-Archive "$env:TEMP\dml.nupkg" "$env:TEMP\dml" -Force
-            $dll = Get-ChildItem "$env:TEMP\dml\bin" -Recurse -Filter DirectML.dll |
-                   Where-Object { $_.FullName -match "x64" } | Select-Object -First 1
+            $pkg = Join-Path $env:TEMP "directml-1.15.4.nupkg"
+            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile $pkg
+            $ext = Join-Path $env:TEMP "directml-1.15.4"
+            New-Item -ItemType Directory -Force $ext | Out-Null
+            tar.exe -xf $pkg -C $ext
+            $dll = Get-ChildItem $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
           }
+          if (-not $dll) { throw "DirectML.dll x64 could not be obtained" }
           Copy-Item $dll.FullName $deps -Force
           Write-Output "staged $($dll.FullName) -> $deps"
       - name: Light build (no OCR)
@@ -111,18 +119,25 @@ jobs:
           # (non-empty) DirectML.dll must exist in resources/ on a fresh runner.
           # prepare-bundle.mjs keeps this staged copy when ort has not placed
           # one beside the build output yet.
-          $dest = "app/src-tauri/resources/DirectML.dll"
-          New-Item -ItemType Directory -Force "app/src-tauri/resources" | Out-Null
-          if ((Test-Path $dest) -and ((Get-Item $dest).Length -gt 10_000_000)) {
-            Write-Output "resources/DirectML.dll already staged"
-          } else {
+          $ErrorActionPreference = "Stop"
+          # this job runs with working-directory app
+          $dest = Join-Path (Get-Location) "src-tauri/resources/DirectML.dll"
+          New-Item -ItemType Directory -Force (Join-Path (Get-Location) "src-tauri/resources") | Out-Null
+          $staged = $false
+          if (Test-Path $dest) { $staged = (Get-Item $dest).Length -gt 10000000 }
+          if (-not $staged) {
             Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
-            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile "$env:TEMP\dml.nupkg"
-            Expand-Archive "$env:TEMP\dml.nupkg" "$env:TEMP\dml" -Force
-            $dll = Get-ChildItem "$env:TEMP\dml\bin" -Recurse -Filter DirectML.dll |
-                   Where-Object { $_.FullName -match "x64" } | Select-Object -First 1
+            $pkg = Join-Path $env:TEMP "directml-1.15.4.nupkg"
+            Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile $pkg
+            $ext = Join-Path $env:TEMP "directml-1.15.4"
+            New-Item -ItemType Directory -Force $ext | Out-Null
+            tar.exe -xf $pkg -C $ext
+            $dll = Get-ChildItem $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
+            if (-not $dll) { throw "DirectML.dll x64 could not be obtained" }
             Copy-Item $dll.FullName $dest -Force
             Write-Output "staged $($dll.FullName) -> $dest"
+          } else {
+            Write-Output "resources/DirectML.dll already staged"
           }
       - name: Build NSIS installer
         run: npm run tauri:release
