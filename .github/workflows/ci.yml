@@ -54,31 +54,46 @@ jobs:
       - name: Stage DirectML beside test binaries
         shell: pwsh
         run: |
-          # The test binaries statically import DirectML.dll (ort's prebuilt
-          # ONNX Runtime with the DML execution provider). Runners have no
-          # system copy: stage ort's own cached copy first, else the exact
-          # pinned Microsoft.AI.DirectML version from NuGet.
+          # Test binaries statically import DirectML.dll (ort's prebuilt ONNX
+          # Runtime with the DirectML execution provider). Runners have no
+          # system copy, so stage one beside them: prefer ort's own cached
+          # copy, else the pinned Microsoft.AI.DirectML package from NuGet.
           $ErrorActionPreference = "Stop"
-          # this job runs with working-directory app/src-tauri
-          $deps = Join-Path (Get-Location) "target/debug/deps"
-          if (-not (Test-Path $deps)) { New-Item -ItemType Directory -Force $deps | Out-Null }
-          $cache = Join-Path $env:USERPROFILE ".cache\ort"
+          $root = $env:GITHUB_WORKSPACE
+          $crate = Join-Path $root "app"
+          $crate = Join-Path $crate "src-tauri"
+          Write-Output "pwd: $PWD"
+          Write-Output "crate dir: $crate"
+          Get-ChildItem -LiteralPath $crate -Directory | Select-Object -ExpandProperty Name | ForEach-Object { Write-Output "  crate/$_" }
+
+          $deps = Join-Path $crate "target"
+          $deps = Join-Path $deps "debug"
+          $deps = Join-Path $deps "deps"
+          New-Item -ItemType Directory -Force -Path $deps | Out-Null
+
+          $cache = Join-Path $env:USERPROFILE ".cache"
+          $cache = Join-Path $cache "ort"
           $dll = $null
-          if (Test-Path $cache) {
-            $dll = Get-ChildItem $cache -Recurse -Filter "DirectML.dll" -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 10000000 } | Select-Object -First 1
+          if (Test-Path -LiteralPath $cache) {
+            $dll = Get-ChildItem -LiteralPath $cache -Recurse -Filter "DirectML.dll" -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 10000000 } | Select-Object -First 1
           }
           if (-not $dll) {
             Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
             $pkg = Join-Path $env:TEMP "directml-1.15.4.nupkg"
             Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile $pkg
             $ext = Join-Path $env:TEMP "directml-1.15.4"
-            New-Item -ItemType Directory -Force $ext | Out-Null
+            New-Item -ItemType Directory -Force -Path $ext | Out-Null
             tar.exe -xf $pkg -C $ext
-            $dll = Get-ChildItem $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
+            $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
+            if (-not $dll) { $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Select-Object -First 1 }
           }
-          if (-not $dll) { throw "DirectML.dll x64 could not be obtained" }
-          Copy-Item $dll.FullName $deps -Force
-          Write-Output "staged $($dll.FullName) -> $deps"
+          if (-not $dll) { throw "DirectML.dll could not be obtained" }
+          Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
+
+          $dest = Join-Path $deps "DirectML.dll"
+          Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force
+          if (-not (Test-Path -LiteralPath $dest)) { throw "staged file missing: $dest" }
+          Write-Output "staged: $dest"
       - name: Light build (no OCR)
         run: cargo test --locked --no-default-features
       - name: Full build (PaddleOCR)
@@ -120,25 +135,33 @@ jobs:
           # prepare-bundle.mjs keeps this staged copy when ort has not placed
           # one beside the build output yet.
           $ErrorActionPreference = "Stop"
-          # this job runs with working-directory app
-          $dest = Join-Path (Get-Location) "src-tauri/resources/DirectML.dll"
-          New-Item -ItemType Directory -Force (Join-Path (Get-Location) "src-tauri/resources") | Out-Null
+          $app = Join-Path $env:GITHUB_WORKSPACE "app"
+          $resources = Join-Path $app "src-tauri"
+          $resources = Join-Path $resources "resources"
+          New-Item -ItemType Directory -Force -Path $resources | Out-Null
+
+          $dest = Join-Path $resources "DirectML.dll"
           $staged = $false
-          if (Test-Path $dest) { $staged = (Get-Item $dest).Length -gt 10000000 }
+          if (Test-Path -LiteralPath $dest) {
+            $item = Get-Item -LiteralPath $dest
+            $staged = $item.Length -gt 10000000
+          }
           if (-not $staged) {
             Write-Output "downloading pinned Microsoft.AI.DirectML 1.15.4 from NuGet"
             $pkg = Join-Path $env:TEMP "directml-1.15.4.nupkg"
             Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg" -OutFile $pkg
             $ext = Join-Path $env:TEMP "directml-1.15.4"
-            New-Item -ItemType Directory -Force $ext | Out-Null
+            New-Item -ItemType Directory -Force -Path $ext | Out-Null
             tar.exe -xf $pkg -C $ext
-            $dll = Get-ChildItem $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
-            if (-not $dll) { throw "DirectML.dll x64 could not be obtained" }
-            Copy-Item $dll.FullName $dest -Force
-            Write-Output "staged $($dll.FullName) -> $dest"
-          } else {
-            Write-Output "resources/DirectML.dll already staged"
+            $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1
+            if (-not $dll) { $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Select-Object -First 1 }
+            if (-not $dll) { throw "DirectML.dll could not be obtained" }
+            Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
+            Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force
           }
+          if (-not (Test-Path -LiteralPath $dest)) { throw "staged file missing: $dest" }
+          $item = Get-Item -LiteralPath $dest
+          Write-Output "resources/DirectML.dll ready: $dest ($($item.Length) bytes)"
       - name: Build NSIS installer
         run: npm run tauri:release
       - name: Install smoke test
