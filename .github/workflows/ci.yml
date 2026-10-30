@@ -51,25 +51,19 @@ jobs:
         run: node scripts/fetch-model.mjs
       - name: Compile light tests (no-run)
         run: cargo test --locked --no-default-features --no-run
-      - name: Stage DirectML beside test binaries
+      - name: Stage DirectML for tests
         shell: pwsh
         run: |
           # Test binaries statically import DirectML.dll (ort's prebuilt ONNX
-          # Runtime with the DirectML execution provider). Runners have no
-          # system copy, so stage one beside them: prefer ort's own cached
-          # copy, else the pinned Microsoft.AI.DirectML package from NuGet.
+          # Runtime with the DirectML execution provider); runners have no
+          # system copy. The Windows loader resolves static imports through
+          # PATH, so we extract the DLL into a clean step-owned directory and
+          # append it to PATH via $GITHUB_ENV - no writes into the (cache
+          # restored) target tree are required for loading. A best-effort copy
+          # beside the binaries is kept as extra insurance.
           $ErrorActionPreference = "Stop"
-          $root = $env:GITHUB_WORKSPACE
-          $crate = Join-Path $root "app"
-          $crate = Join-Path $crate "src-tauri"
-          Write-Output "pwd: $PWD"
-          Write-Output "crate dir: $crate"
-          Get-ChildItem -LiteralPath $crate -Directory | Select-Object -ExpandProperty Name | ForEach-Object { Write-Output "  crate/$_" }
-
-          $deps = Join-Path $crate "target"
-          $deps = Join-Path $deps "debug"
-          $deps = Join-Path $deps "deps"
-          New-Item -ItemType Directory -Force -Path $deps | Out-Null
+          $dml = Join-Path $env:GITHUB_WORKSPACE "dml-stage"
+          New-Item -ItemType Directory -Force -Path $dml | Out-Null
 
           $cache = Join-Path $env:USERPROFILE ".cache"
           $cache = Join-Path $cache "ort"
@@ -90,10 +84,30 @@ jobs:
           if (-not $dll) { throw "DirectML.dll could not be obtained" }
           Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
 
-          $dest = Join-Path $deps "DirectML.dll"
+          $dest = Join-Path $dml "DirectML.dll"
           Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force
-          if (-not (Test-Path -LiteralPath $dest)) { throw "staged file missing: $dest" }
-          Write-Output "staged: $dest"
+          if (-not (Test-Path -LiteralPath $dest)) { throw "copy into dml-stage failed: $dest" }
+          Write-Output "staged: $dest ($((Get-Item -LiteralPath $dest).Length) bytes)"
+
+          # GITHUB_ENV is a file when set; append the expanded PATH entry so
+          # every later step (cargo test executables) resolves DirectML.dll.
+          if ($env:GITHUB_ENV) {
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml"
+            Write-Output "appended to PATH via GITHUB_ENV: $dml"
+          }
+
+          # Extra insurance: copy beside the test binaries too. Non-fatal so a
+          # quirk in the cache-restored target tree can never block the run.
+          try {
+            $deps = Join-Path (Join-Path (Join-Path $env:GITHUB_WORKSPACE "app") "src-tauri") "target"
+            $deps = Join-Path (Join-Path $deps "debug") "deps"
+            if (Test-Path -LiteralPath (Join-Path $deps "..")) {
+              [System.IO.File]::Copy($dest, (Join-Path $deps "DirectML.dll"), $true)
+              Write-Output "also copied beside test binaries"
+            }
+          } catch {
+            Write-Output "note: beside-binaries copy skipped: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
+          }
       - name: Light build (no OCR)
         run: cargo test --locked --no-default-features
       - name: Full build (PaddleOCR)
@@ -157,11 +171,29 @@ jobs:
             if (-not $dll) { $dll = Get-ChildItem -LiteralPath $ext -Recurse -Filter "DirectML.dll" | Select-Object -First 1 }
             if (-not $dll) { throw "DirectML.dll could not be obtained" }
             Write-Output "found: $($dll.FullName) ($($dll.Length) bytes)"
-            Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force
+            try {
+              Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force -ErrorAction Stop
+            } catch {
+              Write-Output "Copy-Item failed ($($_.Exception.Message)); retrying via [IO.File]::Copy"
+              [System.IO.File]::Copy($dll.FullName, $dest, $true)
+            }
           }
           if (-not (Test-Path -LiteralPath $dest)) { throw "staged file missing: $dest" }
           $item = Get-Item -LiteralPath $dest
           Write-Output "resources/DirectML.dll ready: $dest ($($item.Length) bytes)"
+
+          # Insurance for the release build and the installer smoke test: make
+          # the DirectML host directory resolvable through PATH as well.
+          $dml = Join-Path $env:GITHUB_WORKSPACE "dml-stage"
+          New-Item -ItemType Directory -Force -Path $dml | Out-Null
+          $dmlDest = Join-Path $dml "DirectML.dll"
+          if (-not (Test-Path -LiteralPath $dmlDest)) {
+            [System.IO.File]::Copy($dest, $dmlDest, $true)
+          }
+          if ($env:GITHUB_ENV) {
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml"
+            Write-Output "appended to PATH via GITHUB_ENV: $dml"
+          }
       - name: Build NSIS installer
         run: npm run tauri:release
       - name: Install smoke test
