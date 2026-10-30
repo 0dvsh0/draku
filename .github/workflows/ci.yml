@@ -89,11 +89,12 @@ jobs:
           if (-not (Test-Path -LiteralPath $dest)) { throw "copy into dml-stage failed: $dest" }
           Write-Output "staged: $dest ($((Get-Item -LiteralPath $dest).Length) bytes)"
 
-          # GITHUB_ENV is a file when set; append the expanded PATH entry so
-          # every later step (cargo test executables) resolves DirectML.dll.
+          # GITHUB_ENV is a file when set; embed the FULL PATH (dml-stage
+          # first) because some runner versions replace PATH entries rather
+          # than appending - cargo and friends must stay resolvable.
           if ($env:GITHUB_ENV) {
-            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml"
-            Write-Output "appended to PATH via GITHUB_ENV: $dml"
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml;$env:PATH"
+            Write-Output "wrote full PATH via GITHUB_ENV (dml-stage first)"
           }
 
           # Extra insurance: copy beside the test binaries too. Non-fatal so a
@@ -191,8 +192,8 @@ jobs:
             [System.IO.File]::Copy($dest, $dmlDest, $true)
           }
           if ($env:GITHUB_ENV) {
-            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml"
-            Write-Output "appended to PATH via GITHUB_ENV: $dml"
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "PATH=$dml;$env:PATH"
+            Write-Output "wrote full PATH via GITHUB_ENV (dml-stage first)"
           }
       - name: Build NSIS installer
         run: npm run tauri:release
