@@ -50,9 +50,17 @@ jobs:
         working-directory: app
         run: node scripts/fetch-model.mjs
       - name: Light build (no OCR)
-        run: cargo test --locked --no-default-features
+        shell: pwsh
+        run: |
+          # ort copies DirectML.dll beside the profile root during compile; the
+          # runner PATH must include it or the test binary fails to load.
+          $env:PATH = "$PWD\target\debug;$env:PATH"
+          cargo test --locked --no-default-features
       - name: Full build (PaddleOCR)
-        run: cargo test --locked --features ocr
+        shell: pwsh
+        run: |
+          $env:PATH = "$PWD\target\debug;$env:PATH"
+          cargo test --locked --features ocr
 
   package:
     name: desktop packaging (NSIS + smoke test)
