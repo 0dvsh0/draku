@@ -49,18 +49,24 @@ jobs:
         if: steps.model-cache.outputs.cache-hit != 'true'
         working-directory: app
         run: node scripts/fetch-model.mjs
+      - name: Compile light tests (no-run)
+        run: cargo test --locked --no-default-features --no-run
+      - name: Stage ort DLLs beside test binaries
+        shell: pwsh
+        run: |
+          # ort-sys copies DirectML.dll somewhere under target/ during compile;
+          # test executables live in target/debug/deps, where Windows cannot
+          # find that import otherwise (runners have no system DirectML).
+          $hits = Get-ChildItem -Path "app/src-tauri/target" -Recurse -Filter DirectML.dll -ErrorAction SilentlyContinue
+          if (-not $hits) { Write-Error "DirectML.dll missing under target/ (ort-sys copy failed)"; exit 1 }
+          $deps = "app/src-tauri/target/debug/deps"
+          New-Item -ItemType Directory -Force $deps | Out-Null
+          Copy-Item $hits[0].FullName $deps -Force
+          Write-Output "staged $($hits[0].FullName) -> $deps"
       - name: Light build (no OCR)
-        shell: pwsh
-        run: |
-          # ort copies DirectML.dll beside the profile root during compile; the
-          # runner PATH must include it or the test binary fails to load.
-          $env:PATH = "$PWD\target\debug;$env:PATH"
-          cargo test --locked --no-default-features
+        run: cargo test --locked --no-default-features
       - name: Full build (PaddleOCR)
-        shell: pwsh
-        run: |
-          $env:PATH = "$PWD\target\debug;$env:PATH"
-          cargo test --locked --features ocr
+        run: cargo test --locked --features ocr
 
   package:
     name: desktop packaging (NSIS + smoke test)
