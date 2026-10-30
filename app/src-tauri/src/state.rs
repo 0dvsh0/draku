@@ -33,7 +33,7 @@ impl DrakuState {
                        FROM files f JOIN file_dates d ON d.file_id = f.id
                        WHERE d.kind = 'deadline' AND d.date >= ?1 AND d.date <= ?2
                          AND f.file_id NOT IN (SELECT file_id FROM rest_log WHERE restored_at IS NULL)
-                       ORDER BY d.date ASC"#,
+                       ORDER BY d.date ASC, (f.dup_of IS NOT NULL) ASC"#,
                 )
                 .map_err(|_| ())
             {
@@ -70,6 +70,13 @@ impl DrakuState {
                     // only the soonest date per file
                     continue;
                 }
+                if deadlines
+                    .iter()
+                    .any(|x| x.name == d.name && x.label == d.label && x.date == d.date)
+                {
+                    // Two copies of one document make one reminder, not two.
+                    continue;
+                }
                 d.days_left = days;
                 deadlines.push(d);
             }
@@ -85,7 +92,8 @@ impl DrakuState {
                               CASE WHEN s.bbox IS NOT NULL THEN 1 ELSE 0 END
                        FROM files f LEFT JOIN file_secrets s ON s.file_id = f.id
                        WHERE (s.id IS NOT NULL OR f.gps_lat IS NOT NULL)
-                         AND f.file_id NOT IN (SELECT file_id FROM rest_log WHERE restored_at IS NULL)"#,
+                         AND f.file_id NOT IN (SELECT file_id FROM rest_log WHERE restored_at IS NULL)
+                        ORDER BY (f.dup_of IS NOT NULL) ASC, f.id ASC"#,
                 )
                 .map_err(|_| ())
             {
@@ -117,6 +125,13 @@ impl DrakuState {
             });
             for s in mapped.into_iter().flatten().flatten() {
                 if secrets.iter().any(|x| x.file_id == s.file_id) {
+                    continue;
+                }
+                if secrets
+                    .iter()
+                    .any(|x| x.kind == s.kind && x.preview == s.preview && x.name == s.name)
+                {
+                    // The same document saved twice exposes one secret once.
                     continue;
                 }
                 secrets.push(s);
@@ -283,7 +298,7 @@ mod tests {
 
         let state = DrakuState {
             store: Mutex::new(store),
-            embedder: Mutex::new(crate::embed::Embedder::new()),
+            embedder: Mutex::new(crate::embed::Embedder::new(None)),
             scanning: AtomicBool::new(false),
         };
         let snap = state.snapshot();
@@ -322,6 +337,44 @@ mod tests {
         assert!(snap.secrets.iter().any(|s| s.name == "Renew insurance"));
         assert!(snap.secrets.iter().any(|s| s.name == "Old lab report"));
         assert!(!snap.secrets.iter().any(|s| s.name == "Rested secret"));
+
+        drop(state);
+        cleanup(&dir);
+    }
+
+    #[test]
+    fn copies_of_one_document_make_one_reminder_and_one_secret() {
+        let dir = temp_dir("state-dedupe");
+        let store = Store::open(&dir).expect("open store");
+        let today = Local::now().date_naive();
+        let due = (today + Days::new(7)).to_string();
+
+        for rel in ["scan-1.pdf", "scan-2.pdf"] {
+            let mut r = reading(&dir, rel, "Warranty receipt", 0.2);
+            r.dates.push(DateRef {
+                label: "Warranty end".into(),
+                date: due.clone(),
+                kind: "deadline".into(),
+            });
+            r.secrets.push(SecretRef {
+                kind: "id_number".into(),
+                preview: "12••••••••••2".into(),
+                page: None,
+                bbox: None,
+            });
+            store.upsert_reading(&r, None).unwrap();
+        }
+
+        let state = DrakuState {
+            store: Mutex::new(store),
+            embedder: Mutex::new(crate::embed::Embedder::new(None)),
+            scanning: AtomicBool::new(false),
+        };
+        let snap = state.snapshot();
+
+        assert_eq!(snap.deadlines.len(), 1, "one date, two copies");
+        assert_eq!(snap.secrets.len(), 1, "one exposed number, two copies");
+        assert_eq!(snap.files_total, 2, "both files are still indexed");
 
         drop(state);
         cleanup(&dir);

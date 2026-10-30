@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "check": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke:installer": "node scripts/smoke-test-installer.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter-tight": "^5.2.8",

@@ -54,10 +54,10 @@ function AskBar({
             }
           }}
         />
-        <kbd>⌘K</kbd>
+        <kbd>Ctrl K</kbd>
       </label>
       <div className="hints">
-        {["Wi-Fi password", "blood test", "laptop warranty", "train ticket"].map((h) => (
+        {["Wi-Fi password", "blood test", "laptop warranty", "boarding pass"].map((h) => (
           <button key={h} onClick={() => setQuery(h)}>
             {h}
           </button>
@@ -80,7 +80,7 @@ function Results({ hits, query }: { hits: SearchHit[]; query: string }) {
           <article className="hit" key={h.fileId}>
             <span className="hit__score">
               <b>{Math.round(h.score * 100)}%</b>
-              <i>MATCH</i>
+              <i>SIMILAR</i>
             </span>
             <div className="hit__body">
               <p className="hit__name">{h.name}</p>
@@ -232,7 +232,8 @@ function LetGoCard({
             ))}
           </ul>
           <p className="card__footnote">
-            {fmtBytes(state.restFreed)} would come back · {relativeAge(items[0])}
+            {fmtBytes(state.restFreed)} would move to Rest, never deleted ·{" "}
+            {relativeAge(items[0])}
           </p>
           <button
             className={"btn btn--blood card__btn" + (confirming ? " is-confirm" : "")}

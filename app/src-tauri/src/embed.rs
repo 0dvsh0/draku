@@ -153,3 +153,60 @@ pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
     }
     dot / (na.sqrt() * nb.sqrt())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cosine_identical_vectors_is_one() {
+        let v = vec![1.0, 2.0, 3.0];
+        assert!((cosine(&v, &v) - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn cosine_orthogonal_vectors_is_zero() {
+        let a = vec![1.0, 0.0];
+        let b = vec![0.0, 1.0];
+        assert!((cosine(&a, &b)).abs() < 1e-5);
+    }
+
+    #[test]
+    fn bundled_model_dir_locates_files() {
+        let Some(dir) = bundled_model_dir(None) else {
+            eprintln!("[draku test] bundled model not downloaded; skipping bundled_model_dir_locates_files");
+            return;
+        };
+        for f in MODEL_FILES {
+            assert!(dir.join(f).is_file(), "file {f} must exist in {dir:?}");
+        }
+    }
+
+    #[test]
+    fn bundled_model_loads_and_embeds() {
+        let Some(dir) = bundled_model_dir(None) else {
+            eprintln!("[draku test] bundled model not downloaded; skipping bundled_model_loads_and_embeds");
+            return;
+        };
+        let mut embedder = Embedder::new(Some(dir));
+        let texts = vec![
+            "title: Wi-Fi password | text: Wi-Fi password tiger-lily-0429 router admin".into(),
+            "title: Dr Patel blood test | text: Complete blood count lab report prescription".into(),
+        ];
+        let embeddings = embedder.embed(&texts).expect("embed must succeed");
+        assert_eq!(embeddings.len(), 2);
+        assert!(!embeddings[0].is_empty());
+        assert_eq!(embeddings[0].len(), embeddings[1].len());
+
+        let q = embedder
+            .embed(&["task: search result | query: internet password".into()])
+            .expect("query embed");
+        let sim_wifi = cosine(&q[0], &embeddings[0]);
+        let sim_blood = cosine(&q[0], &embeddings[1]);
+        assert!(
+            sim_wifi > sim_blood,
+            "internet password should match wifi ({sim_wifi}) higher than blood test ({sim_blood})"
+        );
+    }
+}
+

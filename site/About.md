@@ -34,18 +34,18 @@ Find, Remember, Protect and Let go are not four features. They are four answers 
 | --- | --- | --- |
 | Find | IMG-20261011-WA0004.jpg | 2026-10-11 Dr Patel blood test prescription.jpg, found by typing "blood test" |
 | Remember | A warranty receipt screenshot, one week from expiry | A calendar reminder, set with one tap |
-| Protect | An Aadhaar photo with all 12 digits visible and a GPS tag inside | First 8 digits blurred, GPS tag removed |
+| Protect | An Aadhaar photo with all 12 digits visible and a GPS tag inside | The exposed ID region pixelated, GPS tag removed |
 | Let go | Old OTPs, expired tickets, four copies of one photo | Set aside in a rest folder, restorable |
 
 ## One screen, no settings
 
 The whole product is a drop zone and one screen. Drop a folder, or point Draku at Screenshots and Downloads, and when it has read them you see three cards and a search line. In the demo folder the cards read:
 
-- **2 deadlines.** Laptop warranty ends in 4 days. Exam form closes tomorrow. One button: Add to calendar.
-- **1 exposed secret.** A screenshot shows a password in a browser tab. One button: Make a safe copy.
-- **9 files ready to let go.** Expired OTPs, old QR codes, near-identical photos. One button: Set aside.
+- **3 deadlines.** Laptop warranty ends in 6 days. Electricity bill is due in 17 days. A repeat test is booked for next September. One button: Add to calendar.
+- **4 exposed secrets.** An ID number in a lab report, an account number on a bill, a Wi-Fi password in a text file, and a photo that still carries GPS. One button: Make a safe copy.
+- **3 files ready to let go.** An expired boarding pass, a one-time code screenshot, and a duplicate lab report. One button: Set aside.
 
-Above the cards sits one line: "Ask anything." Type "Wi-Fi password from last month" and the right screenshot comes back, cropped to the answer. Nothing changes on your device until you press a button.
+Above the cards sits one line: "Ask anything." Type "internet password" and the Wi-Fi notes come back first. Nothing changes on your device until you press a button.
 
 ## What we said no to
 
@@ -63,11 +63,11 @@ Four beats and one reveal. Record it on the laptop itself, with Wi-Fi visibly of
 
 | Time | On screen | You say |
 | --- | --- | --- |
-| 0:00 | Airplane mode on. A messy folder of 25 files: IMG\_0042.png, scan\_1(2).pdf, old screenshots. | "This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here." |
-| 0:10 | Drop the folder. Cryptic names turn into clear ones as you watch. Type: laptop warranty. | "Draku reads each file once. Now every file has a name, and you can just ask." |
-| 0:25 | A card appears: Laptop warranty ends in 4 days. Tap Add to calendar. | "That date was trapped inside a picture. Now it is in your calendar." |
-| 0:35 | Pick a screenshot to share. A password in a browser tab and a hidden GPS pin light up. Tap Make a safe copy. | "Before you share it, you see what you would give away. One tap and it is gone." |
-| 0:48 | The Let go card shows 9 files. Tap Set aside. | "Nine files nothing depends on. They rest in a folder you can restore from." |
+| 0:00 | Airplane mode on. A folder of 8 real files: a bill, a warranty receipt, a lab report, a boarding pass, an OTP screenshot. | "This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here." |
+| 0:10 | Drop the folder. Cryptic names turn into clear ones as you watch. Type: internet password. | "Draku reads each file once. Now every file has a name, and you can just ask." |
+| 0:25 | A card appears: Warranty ends in 6 days. Tap Add to calendar. | "That date was trapped inside a picture. Now it is in your calendar." |
+| 0:35 | The secrets card shows an ID number in the lab report. Tap Make a safe copy. | "Before you share it, you see what you would give away. One tap and the exposed region is gone." |
+| 0:48 | The Let go card shows 3 files. Tap Set aside. | "Three files nothing depends on. They rest in a folder you can restore from." |
 | 0:55 | Cut back to the airplane-mode icon, still on. | "One more thing. That was airplane mode the whole time." |
 
 ## Why it has to be open

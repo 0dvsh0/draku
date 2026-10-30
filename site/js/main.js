@@ -108,11 +108,11 @@
 
   /* ---------- app: Ask anything ---------- */
   var FILES = [
-    { k: ['wifi', 'wi-fi', 'password', 'router', 'network'], was: 'Screenshot_20260918-221455.png', name: '2026-09-18 Home Wi-Fi password.png', crop: '<b>Home_5G</b>pass: tiger-lily-0429', meta: 'Screenshot · 6 weeks ago · cropped to the answer' },
-    { k: ['blood', 'prescription', 'patel', 'pharmacy', 'medicine', 'doctor'], was: 'IMG-20261011-WA0004.jpg', name: '2026-10-11 Dr Patel blood test prescription.jpg', crop: '<b>Rx · Dr Patel</b>CBC, Lipid panel', meta: 'Photo · WhatsApp · 18 days ago' },
-    { k: ['laptop', 'warranty', 'receipt', 'invoice'], was: 'scan_1(2).pdf', name: '2025-11-02 Laptop warranty receipt.pdf', crop: '<b>Warranty valid till</b>02 Nov 2026', meta: 'PDF · ends in 4 days · reminder ready' },
-    { k: ['train', 'ticket', 'pnr', 'travel'], was: 'IMG_0042.png', name: '2026-08-14 Mumbai–Pune train ticket.png', crop: '<b>PNR 482-1937</b>Coach C2 · 41', meta: 'Screenshot · trip has passed · ready to let go' },
-    { k: ['exam', 'form', 'admit'], was: 'Download (3).pdf', name: '2026-10-30 Exam application form.pdf', crop: '<b>Last date</b>30 Oct 2026', meta: 'PDF · closes tomorrow' }
+    { k: ['wifi', 'wi-fi', 'password', 'router', 'network', 'internet'], was: 'wifi-notes.txt', name: 'wifi notes', crop: '<b>Wi-Fi password</b>correct-horse-4821', meta: 'Text · credentials · found by “internet password”' },
+    { k: ['blood', 'prescription', 'patel', 'pharmacy', 'medicine', 'doctor', 'lab'], was: 'IMG-20261011-WA0004.png', name: '2026-10-11 Blood test report', crop: '<b>ID number</b>12•••••••••••2', meta: 'Photo · medical / prescription · one exposed ID' },
+    { k: ['laptop', 'warranty', 'receipt', 'invoice'], was: 'warranty-receipt.png', name: 'warranty receipt', crop: '<b>Warranty end</b>04 Nov 2026', meta: 'Photo · warranty · ends in 6 days' },
+    { k: ['boarding', 'pass', 'flight', 'travel', 'ticket'], was: 'boarding-pass-2026-10-12.png', name: 'boarding pass', crop: '<b>NORTHWIND AIR</b>DEL → BOM · 12 Oct 2026', meta: 'Photo · its date has passed · ready to let go' },
+    { k: ['bill', 'electricity', 'due', 'payment'], was: 'electricity-bill.pdf', name: 'electricity bill', crop: '<b>Due by</b>15 Nov 2026 · INR 2,480', meta: 'PDF · bill · due in 17 days' }
   ];
   var ask = $('#ask'), results = $('#results');
   function search(q) {
@@ -123,7 +123,7 @@
       var s = 0; f.k.forEach(function (k) { if (q.indexOf(k) > -1) s += 1; });
       if (s > best) { best = s; hit = f; }
     });
-    if (!hit) { results.innerHTML = '<div class="result result--none">Nothing in the demo folder matches. Try “Wi-Fi password from last month”.</div>'; return; }
+    if (!hit) { results.innerHTML = '<div class="result result--none">Nothing in the demo folder matches. Try “internet password”.</div>'; return; }
     results.innerHTML = '<div class="result"><div class="result__crop">' + hit.crop + '</div><div><div class="result__was">' + hit.was + '</div><div class="result__name">' + hit.name + '</div><div class="result__meta">' + hit.meta + '</div></div></div>';
   }
   var debounce;
@@ -143,35 +143,35 @@
   btnCal.addEventListener('click', function () {
     if (btnCal.classList.contains('is-done')) return;
     $$('.card--date li').forEach(function (li) { li.classList.add('is-done'); });
-    btnCal.classList.add('is-done'); $('span', btnCal).textContent = 'Added · 2 reminders';
-    toast('2 reminders added to your calendar. Locally.');
+    btnCal.classList.add('is-done'); $('span', btnCal).textContent = 'Added · 1 reminder';
+    toast('1 reminder added to your calendar. Locally.');
   });
   var btnSafe = $('#btnSafe'), shot = $('#shot');
   btnSafe.addEventListener('click', function () {
     var on = shot.classList.toggle('is-safe');
     btnSafe.classList.toggle('is-done', on);
     $('span', btnSafe).textContent = on ? 'Safe copy made · undo' : 'Make a safe copy';
-    if (on) toast('Password blurred into the pixels. GPS tag stripped.');
+    if (on) toast('ID number pixelated into the pixels. GPS tag stripped.');
   });
   var btnAside = $('#btnAside'), tiles = $('#tiles'), rest = $('#rest'), num = $('#letgoNum');
   btnAside.addEventListener('click', function () {
     tiles.classList.add('is-gone');
     setTimeout(function () { tiles.hidden = true; rest.hidden = false; num.textContent = '0'; btnAside.hidden = true; }, 520);
-    toast('9 files resting in a folder you can restore from.');
+    toast('3 files resting in a folder you can restore from.');
   });
   $('#btnRestore').addEventListener('click', function () {
-    rest.hidden = true; tiles.hidden = false; num.textContent = '9'; btnAside.hidden = false;
+    rest.hidden = true; tiles.hidden = false; num.textContent = '3'; btnAside.hidden = false;
     requestAnimationFrame(function () { tiles.classList.remove('is-gone'); });
     toast('Restored. Nothing was ever deleted.');
   });
 
   /* ---------- demo player ---------- */
   var BEATS = [
-    { t: 0, on: 'A messy folder of 25 files: IMG_0042.png, scan_1(2).pdf, old screenshots.', say: '“This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here.”' },
-    { t: 10, on: 'Drop the folder. Cryptic names turn into clear ones as you watch. Type: laptop warranty.', say: '“Draku reads each file once. Now every file has a name, and you can just ask.”' },
-    { t: 25, on: 'Laptop warranty ends in 4 days. → Add to calendar.', say: '“That date was trapped inside a picture. Now it is in your calendar.”' },
-    { t: 35, on: 'A password in a browser tab and a hidden GPS pin light up. → Make a safe copy.', say: '“Before you share it, you see what you would give away. One tap and it is gone.”' },
-    { t: 48, on: 'The Let go card shows 9 files. → Set aside.', say: '“Nine files nothing depends on. They rest in a folder you can restore from.”' },
+    { t: 0, on: 'A folder of 8 real files: a bill, a warranty receipt, a lab report, a boarding pass, an OTP screenshot.', say: '“This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here.”' },
+    { t: 10, on: 'Drop the folder. Cryptic names turn into clear ones as you watch. Type: internet password.', say: '“Draku reads each file once. Now every file has a name, and you can just ask.”' },
+    { t: 25, on: 'Warranty end in 6 days. → Add to calendar.', say: '“That date was trapped inside a picture. Now it is in your calendar.”' },
+    { t: 35, on: 'An ID number in the lab report lights up. → Make a safe copy.', say: '“Before you share it, you see what you would give away. One tap and it is gone.”' },
+    { t: 48, on: 'The Let go card shows 3 files. → Set aside.', say: '“Three files nothing depends on. They rest in a folder you can restore from.”' },
     { t: 55, on: 'That was airplane mode the whole time.', say: '“One more thing.”', reveal: true }
   ];
   var player = $('#player'), stage = $('.stage'), on = $('#stageOn'), say = $('#stageSay'), clock = $('#clock'), fill = $('#trackFill');

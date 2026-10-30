@@ -286,7 +286,7 @@
         <div class="app" id="app">
           <div class="app__bar">
             <span class="tl"></span><span class="tl"></span><span class="tl"></span>
-            <span class="app__title">Draku — Demo folder · 25 files</span>
+            <span class="app__title">Draku — Demo folder · 8 files</span>
             <span class="app__air" title="Airplane mode on">
               <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
               Offline
@@ -297,23 +297,24 @@
             <label class="ask">
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               <input id="ask" type="search" placeholder="Ask anything." autocomplete="off" aria-label="Ask anything about your files">
-              <kbd>⌘K</kbd>
+              <kbd>Ctrl K</kbd>
             </label>
             <div class="ask__hints">
-              <button data-q="Wi-Fi password from last month">Wi-Fi password from last month</button>
+              <button data-q="internet password">internet password</button>
               <button data-q="blood test">blood test</button>
               <button data-q="laptop warranty">laptop warranty</button>
-              <button data-q="train ticket">train ticket</button>
+              <button data-q="boarding pass">boarding pass</button>
             </div>
             <div class="results" id="results" aria-live="polite"></div>
 
             <div class="cards">
               <!-- Deadlines -->
               <article class="card card--date">
-                <header><span class="card__num">2</span><span class="card__what">deadlines</span></header>
+                <header><span class="card__num">3</span><span class="card__what">deadlines</span></header>
                 <ul class="card__list">
-                  <li><span>Laptop warranty ends</span><b class="warn">in 4 days</b></li>
-                  <li><span>Exam form closes</span><b class="warn">tomorrow</b></li>
+                  <li><span>Warranty end</span><b class="warn">in 6 days</b></li>
+                  <li><span>Due by</span><b class="warn">in 17 days</b></li>
+                  <li><span>Refill by</span><b>in 321 days</b></li>
                 </ul>
                 <button class="card__btn" id="btnCal">
                   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg>
@@ -323,12 +324,12 @@
 
               <!-- Secret -->
               <article class="card card--secret">
-                <header><span class="card__num">1</span><span class="card__what">exposed secret</span></header>
+                <header><span class="card__num">4</span><span class="card__what">exposed secrets</span></header>
                 <div class="shot" id="shot">
-                  <div class="shot__tab"><span></span>router.local / admin</div>
-                  <div class="shot__row"><small>Network</small><span>Home_5G</span></div>
-                  <div class="shot__row"><small>Password</small><span class="secret">tiger-lily-0429</span></div>
-                  <div class="shot__gps"><svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Zm0-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg><span>GPS 19.0760, 72.8777</span></div>
+                  <div class="shot__tab"><span></span>blood test report</div>
+                  <div class="shot__row"><small>ID number</small><span class="secret">12•••••••••••2</span></div>
+                  <div class="shot__row"><small>Repeat test</small><span>15 Sep 2027</span></div>
+                  <div class="shot__gps"><svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Zm0-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg><span>one pixelated region ready</span></div>
                 </div>
                 <button class="card__btn" id="btnSafe">
                   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -338,13 +339,13 @@
 
               <!-- Let go -->
               <article class="card card--letgo">
-                <header><span class="card__num" id="letgoNum">9</span><span class="card__what">files ready to let go</span></header>
+                <header><span class="card__num" id="letgoNum">3</span><span class="card__what">files ready to let go</span></header>
                 <div class="tiles" id="tiles">
-                  <span>OTP</span><span>OTP</span><span>QR</span><span>OTP</span><span>Ticket</span><span>QR</span><span>Dup</span><span>Dup</span><span>Dup</span>
+                  <span>Ticket</span><span>OTP</span><span>Dup</span>
                 </div>
                 <div class="rest" id="rest" hidden>
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-                  <span>9 files resting · 41 MB freed</span>
+                  <span>3 files resting · 137 KB</span>
                   <button class="link" id="btnRestore">Restore</button>
                 </div>
                 <button class="card__btn" id="btnAside">
@@ -389,7 +390,7 @@
               <span class="stage__clock" id="clock">0:00</span>
             </div>
             <div class="stage__screen" id="stageScreen">
-              <p class="stage__on" id="stageOn">A messy folder of 25 files: IMG_0042.png, scan_1(2).pdf, old screenshots.</p>
+              <p class="stage__on" id="stageOn">A folder of 8 real files: a bill, a warranty receipt, a lab report, a boarding pass, an OTP screenshot.</p>
             </div>
             <blockquote class="stage__say" id="stageSay">“This folder is on every laptop. Airplane mode is on. Everything you are about to see happens right here.”</blockquote>
             <div class="stage__ctrl">
@@ -403,11 +404,11 @@
             </div>
           </div>
           <ol class="beats" id="beats">
-            <li data-t="0"><time>0:00</time><span>Airplane mode on. A messy folder.</span></li>
+            <li data-t="0"><time>0:00</time><span>Airplane mode on. A real folder.</span></li>
             <li data-t="10"><time>0:10</time><span>Drop it. Names turn clear.</span></li>
-            <li data-t="25"><time>0:25</time><span>Warranty ends in 4 days.</span></li>
-            <li data-t="35"><time>0:35</time><span>A password lights up.</span></li>
-            <li data-t="48"><time>0:48</time><span>Nine files rest.</span></li>
+            <li data-t="25"><time>0:25</time><span>Warranty ends in 6 days.</span></li>
+            <li data-t="35"><time>0:35</time><span>An ID number lights up.</span></li>
+            <li data-t="48"><time>0:48</time><span>Three files rest.</span></li>
             <li data-t="55" class="beat--reveal"><time>0:55</time><span>One more thing.</span></li>
           </ol>
         </div>
@@ -434,15 +435,17 @@
           <article>
             <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 34h32M12 34V20M20 34V14M28 34V24M36 34V10"/><path class="hl" d="M6 8 42 40"/></svg>
             <h3>No storage ransom.</h3>
-            <p>It costs nothing to run, because the models run on your hardware. A tool that frees your space never sells you more.</p>
+            <p>It costs nothing to run, because the models run on your hardware. A tool that helps you clear space never sells you more.</p>
           </article>
         </div>
         <div class="terminal" aria-label="Install from source">
           <div class="terminal__bar"><span class="tl"></span><span class="tl"></span><span class="tl"></span><span>~ zsh</span><button class="copy" id="copyCmd">Copy</button></div>
-<pre><code id="cmd"><span class="c">#</span> clone, read every line, then run it — offline
-<span class="p">$</span> git clone https://github.com/draku-app/draku && cd draku
-<span class="p">$</span> ./draku ~/Screenshots ~/Downloads
-<span class="o">→ reading 25 files on-device · network: none</span></code></pre>
+<pre><code id="cmd"><span class="c"># release installer: the model is already inside</span>
+<span class="c"># from source: clone, fetch the model once, then everything is offline</span>
+<span class="p">$</span> git clone https://github.com/0dvsh0/draku && cd draku/app
+<span class="p">$</span> npm install && node scripts/fetch-model.mjs
+<span class="p">$</span> npm run tauri dev
+<span class="o">→ scans stay on-device after that one fetch</span></code></pre>
         </div>
       </div>
     </section>

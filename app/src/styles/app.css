@@ -5,6 +5,14 @@
 
 * { box-sizing: border-box; }
 
+/* Keep the one-screen promise calm: the rare overflow scrolls, but the bar
+   belongs to the fur, not to Windows. */
+* { scrollbar-width: thin; scrollbar-color: #2f2526 transparent; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2f2526; border-radius: 999px; border: 2px solid #050405; }
+::-webkit-scrollbar-thumb:hover { background: #4a3436; }
+
 html, body, #root { height: 100%; }
 
 body {

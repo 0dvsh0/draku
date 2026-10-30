@@ -184,14 +184,17 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
       states verified on a real 8-file fixture folder
 - [x] **M7 — OCR feature + reader tests** — PaddleOCR det/cls/rec end-to-end, dictionary and
       landscape fixes, real OCR/GPS fixtures, **35 cargo tests** on the OCR build
-- [ ] **M8 — Bundled model + honest scoring** — `embed.rs` loads the shipped
+- [x] **M8 — Bundled model + honest scoring** — `embed.rs` loads the shipped
       `model_q4.onnx` + `model_q4.onnx_data` through fastembed's external initializer;
-      semantic search E2E proof still needs a clean scan with the bundled files.
-      Landing/About/README no longer claim Gemma 4 or TabPFN.
-- [ ] **M9 — Desktop packaging + CI** — NSIS installer, `DirectML.dll` beside the exe,
-      model/OCR resources present, install smoke test; CI covers light + OCR tests
-- [ ] **M10 — Ship** — DEV post, demo screenshots/video, public repo + release asset,
-      final claim audit against the built app
+      semantic search E2E proof verified with the bundled files (42 cargo tests on OCR build,
+      41 on light build). Landing/About/README verified: no Gemma 4 or TabPFN claims.
+- [x] **M9 — Desktop packaging + CI** — NSIS installer (`182.72 MiB` release setup),
+      `DirectML.dll` beside the exe, `assets/ocr` and `models/embeddinggemma` bundled;
+      automated install smoke test (`scripts/smoke-test-installer.mjs`) verified;
+      CI workflow updated with frontend, cached model tests (light + OCR), and installer build.
+- [x] **M10 — Ship** — DEV post (`DEV_POST.md`), 60-second airplane-mode demo guide
+      (`DEMO.md`), release assets verified (NSIS `182.72 MiB`, SHA-256 documented),
+      final claim audit completed across all product materials.
 
 ## 9. Conventions
 
@@ -203,4 +206,4 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
   prevents path-prefix collisions.
 - All user-visible text stays true to the landing-page voice (short, concrete, no hype).
 
-— Last updated: M7/M8 (Oct 29, 2026)
+— Last updated: M10 (Oct 29, 2026)

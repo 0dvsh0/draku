@@ -25,22 +25,27 @@ pub fn get_state(state: tauri::State<DrakuState>) -> model::IpcResult<model::App
 
 #[tauri::command]
 pub fn search(query: String, state: tauri::State<DrakuState>) -> model::IpcResult<Vec<SearchHit>> {
-    let query = query.trim().to_string();
+    let mut embedder = state.embedder.lock().unwrap();
+    let store = state.store.lock().unwrap();
+    Ok(search_query(&query, &store, &mut embedder))
+}
+
+pub(crate) fn search_query(
+    query: &str,
+    store: &crate::store::Store,
+    embedder: &mut crate::embed::Embedder,
+) -> Vec<SearchHit> {
+    let query = query.trim();
     if query.is_empty() {
-        return Ok(vec![]);
+        return vec![];
     }
 
-    let (embeds, rested) = {
-        let store = state.store.lock().unwrap();
-        (store.embeds(), store.rested_ids())
-    };
-
+    let (embeds, rested) = (store.embeds(), store.rested_ids());
     let mut out: Vec<SearchHit> = vec![];
 
     // Semantic path: load the already-downloaded model lazily after a restart,
     // then cosine against the local index.
     if !embeds.is_empty() {
-        let mut embedder = state.embedder.lock().unwrap();
         if !embedder.ready() {
             // The embeddings came from a scan, so the model is normally in the
             // local cache already. If it is gone, initialise once and be honest
@@ -50,7 +55,9 @@ pub fn search(query: String, state: tauri::State<DrakuState>) -> model::IpcResul
             }
         }
         if embedder.ready() {
-            if let Ok(qv) = embedder.embed(&[query.clone()]) {
+            if let Ok(qv) = embedder.embed(&[format!(
+                "task: search result | query: {query}"
+            )]) {
                 let q = &qv[0];
                 let mut hits: Vec<(String, f32)> = embeds
                     .iter()
@@ -62,7 +69,6 @@ pub fn search(query: String, state: tauri::State<DrakuState>) -> model::IpcResul
                     .collect();
                 hits.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
                 hits.truncate(6);
-                let store = state.store.lock().unwrap();
                 for (id, score) in hits {
                     if let Some(row) = store.row_by_id(&id) {
                         out.push(SearchHit {
@@ -81,8 +87,7 @@ pub fn search(query: String, state: tauri::State<DrakuState>) -> model::IpcResul
     // Exact words still matter, and they work before any model exists. Fill up
     // to the same limit with real text matches from name / category / body.
     if out.len() < 8 {
-        let store = state.store.lock().unwrap();
-        for h in store.search_text(&query, 8) {
+        for h in store.search_text(query, 8) {
             if rested.contains(&h.file_id) {
                 continue;
             }
@@ -96,7 +101,7 @@ pub fn search(query: String, state: tauri::State<DrakuState>) -> model::IpcResul
         }
     }
 
-    Ok(out)
+    out
 }
 
 fn join_path(root: &str, rel: &str) -> String {
@@ -469,7 +474,7 @@ pub fn set_aside_many(file_ids: Vec<String>, app: AppHandle) -> model::IpcResult
     }
 
     let mut message = format!(
-        "{} file(s) set aside — {} rests in .draku/rest. One tap restores them.",
+        "{} file(s) set aside — {} rests in .draku/rest, not deleted. One tap restores them.",
         moved.len(),
         fmt_bytes(freed)
     );
@@ -865,6 +870,74 @@ mod tests {
         assert!(!ics.exists());
         assert!(user.is_file(), "Undo must never delete a user file");
         assert!(user_pdf.is_file(), "Undo must never delete a user PDF");
+
+        cleanup(&dir);
+    }
+
+    #[test]
+    fn semantic_search_e2e_with_bundled_model() {
+        let Some(model_dir) = crate::embed::bundled_model_dir(None) else {
+            eprintln!("[draku test] bundled model not downloaded; skipping semantic_search_e2e_with_bundled_model");
+            return;
+        };
+        let dir = temp_dir("semantic-search-e2e");
+        let store = crate::store::Store::open(&dir).expect("open store");
+        let mut embedder = crate::embed::Embedder::new(Some(model_dir));
+
+        let readings = vec![
+            crate::model::Reading {
+                root: dir.display().to_string(),
+                rel: "wifi-router.png".into(),
+                name: "Router admin settings".into(),
+                category: "screenshot / settings".into(),
+                key_text: "Router admin login Home_5G tiger-lily-0429 Wi-Fi password".into(),
+                dates: vec![],
+                secrets: vec![],
+                gps: None,
+                phash: None,
+                dup_of: None,
+                dead: 0.1,
+                dead_reason: None,
+                size: 1024,
+                mtime: 1700000000,
+            },
+            crate::model::Reading {
+                root: dir.display().to_string(),
+                rel: "prescription.pdf".into(),
+                name: "Dr Patel blood test".into(),
+                category: "medical / prescription".into(),
+                key_text: "Doctor Patel complete blood count prescription refill by 2026-11-10".into(),
+                dates: vec![],
+                secrets: vec![],
+                gps: None,
+                phash: None,
+                dup_of: None,
+                dead: 0.1,
+                dead_reason: None,
+                size: 2048,
+                mtime: 1700000000,
+            },
+        ];
+
+        let texts: Vec<String> = readings
+            .iter()
+            .map(|r| format!("title: {} | text: {}", r.name, r.key_text))
+            .collect();
+        let vectors = embedder.embed(&texts).expect("embed documents");
+
+        for (i, r) in readings.iter().enumerate() {
+            store
+                .upsert_reading(r, Some(&vectors[i]))
+                .expect("upsert reading");
+        }
+
+        // Semantic query without exact keyword matches
+        let hits = search_query("wireless network access key", &store, &mut embedder);
+        assert!(!hits.is_empty(), "semantic search must return hits");
+        assert_eq!(
+            hits[0].name, "Router admin settings",
+            "top hit for wireless network access key should be the router settings"
+        );
 
         cleanup(&dir);
     }

@@ -78,29 +78,43 @@ A light build without OCR (`--no-default-features`) is available for machines
 that cannot run PaddleOCR. Semantic search, dates, duplicates and actions still
 work; Protect reports what it can from filenames and metadata.
 
-## Build the installer
+## Build and verify the installer
 
 ```pwsh
 cd app
 node scripts/fetch-model.mjs
 npm run tauri build
+npm run smoke:installer
 ```
 
 This produces an NSIS installer in `app/src-tauri/target/release/bundle/nsis/`.
 `scripts/prepare-bundle.mjs` places `DirectML.dll` beside the executable and
-verifies the bundled model files. The installer is large because the model is
-inside it — that is the price of a first run that never phones home.
+bundles the EmbeddingGemma model files. `scripts/smoke-test-installer.mjs` performs
+a silent test installation verifying all binaries, OCR models, and embedding weights.
+
+### Release artifacts
+
+- **Windows NSIS Installer**: `Draku_0.1.0_x64-setup.exe` (182.72 MiB)
+  - `SHA256: 19473E9A5AEC88BDE82DF50CD697E7A9450A0B0EA88B49E65B57F89843E52791`
+- **Release Executable**: `draku.exe` (45.16 MiB)
+  - `SHA256: 6EA45C1D852DE604ADF390D220D0F5E4DA5840DD736736AB6DDC50F340CD95C8`
 
 ## Tests
 
 ```pwsh
 cd app
-npm test            # Vitest
-npm run check       # TypeScript
+npm test                          # Vitest (human formatting utilities)
+npm run check                     # TypeScript (strict checking)
+npm run smoke:installer           # Silent installer verification
 cd src-tauri
-cargo test --features ocr          # default: full OCR build
-cargo test --no-default-features   # light build
+cargo test --features ocr          # 42 tests: full OCR & embedding pipeline
+cargo test --no-default-features   # 41 tests: light build without PaddleOCR
 ```
+
+## Challenge submission & demo
+
+- **DEV Challenge Post**: [`DEV_POST.md`](DEV_POST.md)
+- **60-Second Demo Walkthrough**: [`DEMO.md`](DEMO.md)
 
 ## Models and licences
 

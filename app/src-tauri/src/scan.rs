@@ -122,7 +122,14 @@ pub fn scan(roots: Vec<String>, app: AppHandle) {
     // The model ships with the app. A dev checkout without the bundled copy
     // fetches it once into the local cache; either way, failure never blocks
     // the readings from being stored.
-    let texts: Vec<String> = readings.iter().map(|r| r.key_text.clone()).collect();
+    let texts: Vec<String> = readings
+        .iter()
+        .map(|r| {
+            // EmbeddingGemma's retrieval prompt for documents. Without it the
+            // model still ranks, but the cosine scores understate the match.
+            format!("title: {} | text: {}", r.name, r.key_text)
+        })
+        .collect();
     let embeddings: Option<Vec<Vec<f32>>> = {
         emit(
             &app,
@@ -175,19 +182,51 @@ pub fn scan(roots: Vec<String>, app: AppHandle) {
 /// of eight was broad enough to call two unrelated white receipts duplicates,
 /// which made the Let-go card untrustworthy. Two bits still catches rescans and
 /// slightly recompressed copies while leaving genuinely different pages alone.
+///
+/// When two copies match, the plainer name wins: `otp.png` stays the original
+/// and `otp copy.png` becomes the file Draku offers to let go. Otherwise the
+/// alphabetically first name would decide, which is arbitrary and often picks
+/// the copy.
 pub(crate) fn mark_duplicates(readings: &mut [crate::model::Reading]) {
-    let mut anchors: Vec<(String, String)> = vec![];
-    for r in readings.iter_mut() {
+    let mut groups: Vec<(String, Vec<usize>)> = vec![];
+    for (i, r) in readings.iter().enumerate() {
         let Some(h) = r.phash.clone() else { continue };
-        if let Some((_, first_rel)) = anchors
-            .iter()
+        if let Some((_, members)) = groups
+            .iter_mut()
             .find(|(anchor, _)| hamming_hex(anchor, &h) <= 2)
         {
-            r.dup_of = Some(first_rel.clone());
+            members.push(i);
         } else {
-            anchors.push((h, r.rel.clone()));
+            groups.push((h, vec![i]));
         }
     }
+
+    for (_, members) in groups {
+        if members.len() < 2 {
+            continue;
+        }
+        let canonical = *members
+            .iter()
+            .min_by_key(|&&i| copy_rank(&readings[i].rel))
+            .unwrap();
+        let canonical_rel = readings[canonical].rel.clone();
+        for i in members {
+            if i != canonical {
+                readings[i].dup_of = Some(canonical_rel.clone());
+            }
+        }
+    }
+}
+
+/// Lower is more original: a plain name beats a copy marker, then fewer
+/// characters, then alphabetical order so the result is deterministic.
+fn copy_rank(rel: &str) -> (u8, usize, String) {
+    let lower = rel.to_ascii_lowercase();
+    let copy_marker = lower.contains(" copy")
+        || lower.contains("(1)")
+        || lower.contains("-copy")
+        || lower.contains("duplicate");
+    (copy_marker as u8, rel.len(), lower)
 }
 
 fn emit(app: &AppHandle, p: ScanProgress) {
@@ -234,5 +273,20 @@ mod tests {
         );
         assert_eq!(readings[2].dup_of.as_deref(), Some("otp.png"));
         assert_eq!(readings[3].dup_of.as_deref(), Some("otp.png"));
+    }
+
+    #[test]
+    fn the_plainer_name_is_kept_when_the_copy_is_seen_first() {
+        let mut readings = vec![
+            reading("IMG-1 copy.png", Some("8080200000000000")),
+            reading("IMG-1.png", Some("8080200000000000")),
+        ];
+        mark_duplicates(&mut readings);
+        assert_eq!(
+            readings[0].dup_of.as_deref(),
+            Some("IMG-1.png"),
+            "the copy is the one offered to let go"
+        );
+        assert_eq!(readings[1].dup_of, None);
     }
 }
