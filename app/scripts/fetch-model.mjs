@@ -21,9 +21,11 @@ const REPO = "onnx-community/embeddinggemma-300m-ONNX";
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = join(appRoot, "src-tauri", "resources", "models", "embeddinggemma");
 
+// ONNX weights live in the repo's onnx/ subfolder; tokenizer/config stay at
+// the root. Sizes assert the exact bytes we bundle.
 const files = [
-  { name: "model_q4.onnx", size: 519_322 },
-  { name: "model_q4.onnx_data", size: 196_725_760 },
+  { name: "model_q4.onnx", path: "onnx/model_q4.onnx", size: 519_322 },
+  { name: "model_q4.onnx_data", path: "onnx/model_q4.onnx_data", size: 196_725_760 },
   { name: "tokenizer.json", size: 20_323_312 },
   { name: "config.json", size: 1_765 },
   { name: "special_tokens_map.json", size: 662 },
@@ -32,14 +34,15 @@ const files = [
 
 const fmt = (n) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 
-async function fetchFile({ name, size }) {
+async function fetchFile({ name, path, size }) {
   const dest = join(outDir, name);
   if (existsSync(dest) && statSync(dest).size === size) {
     console.log(`[draku] ${name} already present (${fmt(size)})`);
     return;
   }
 
-  const url = `https://huggingface.co/${REPO}/resolve/main/${name}`;
+  // Root paths broke in 2026 when the upstream repo moved ONNX files into onnx/.
+  const url = `https://huggingface.co/${REPO}/resolve/main/${path ?? name}`;
   const part = `${dest}.part`;
 
   for (let attempt = 1; attempt <= 8; attempt++) {
