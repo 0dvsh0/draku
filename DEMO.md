@@ -1,6 +1,6 @@
 # Draku — The 60-Second Demo Guide
 
-This guide details the exact steps and script for recording the 60-second airplane-mode demo of Draku for Hacktoberfest 2026 Week 4 (*Ghost in the Machine*).
+This guide details the exact steps and script for demonstrating Draku in a 60-second airplane-mode walk-through.
 
 ---
 

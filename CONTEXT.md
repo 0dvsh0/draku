@@ -159,15 +159,12 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
    - Footer truth, always visible: *"Nothing changes on your device until you press a button."*
 4. **Never**: no tabs, no settings, no sidebar, no accounts. If a view needs chrome, it is the wrong design.
 
-## 7. Hacktoberfest 2026 — Week 4
+## 7. Architecture & Philosophy
 
-- **Challenge:** *Ghost in the Machine* — `https://dev.to/challenges/hacktoberfest-week4-2026-10-26`
-- **Due:** October 31, 2026.
-- **Theme fit:** files that outlive their usefulness become ghosts; Draku reads them, names them, and lets them rest rather than deleting them. Día de los Muertos language stays metaphor, never decoration.
-- **Partner angle:** **Gemma** through EmbeddingGemma-300M (open weights, local). PaddleOCR (Apache-2.0) is the local eyes.
-- **Submission:** DEV post (writing carries the most weight), demo video or live link, public code repo, open-innovation rationale, optional DevRelay agent session.
-- **Rule:** every claim in the post, README, landing page and About.md must match what the shipped build actually does. Gemma 4 vision and TabPFN are roadmap, not shipped features.
-- **M11 decisions (Oct 30, 2026):** public repo is `0dvsh0/draku` (main pushed); landing site deploys to `https://0dvsh0.github.io/draku/` via `.github/workflows/pages.yml` (Pages source = GitHub Actions); release `v0.1.0` carries `Draku_0.1.0_x64-setup.exe` + `draku.exe`; all download/source links point there. Prize categories declared in the post: **Best Use of Gemma ($200)** and **Best Use of GitHub Copilot ($100 — Actions-automated CI/installer pipeline)**; overall winner ($250) applies automatically. No agent-session section in the post (user choice).
+- **Theme & Motivation:** Files that outlive their usefulness linger as unindexed digital residue; Draku reads them, names them, protects secrets, and lets expired items rest rather than deleting them.
+- **Engine:** **Gemma** through EmbeddingGemma-300M (open weights, local). PaddleOCR (Apache-2.0) is the local vision pipeline.
+- **Rule:** Every claim in the documentation, README, landing page, and About.md must match what the shipped build actually does. Gemma 4 vision and TabPFN are roadmap, not shipped features.
+- **Distribution:** Public repo is `0dvsh0/draku`; landing site deploys to `https://0dvsh0.github.io/draku/` via `.github/workflows/pages.yml`; release `v0.1.0` carries `Draku_0.1.0_x64-setup.exe` + `draku.exe`; all download/source links point there.
 
 ## 8. Roadmap / status (do not start a new item before closing the open one)
 
@@ -193,14 +190,12 @@ Layout, exactly as the `About.md` "One screen, no settings" section:
       `DirectML.dll` beside the exe, `assets/ocr` and `models/embeddinggemma` bundled;
       automated install smoke test (`scripts/smoke-test-installer.mjs`) verified;
       CI workflow updated with frontend, cached model tests (light + OCR), and installer build.
-- [x] **M10 — Ship** — DEV post (`DEV_POST.md`), 60-second airplane-mode demo guide
-      (`DEMO.md`), release assets verified (NSIS `182.72 MiB`, SHA-256 documented),
-      final claim audit completed across all product materials.
+- [x] **M10 — Ship** — 60-second airplane-mode demo guide (`DEMO.md`), release assets verified
+      (NSIS `182.72 MiB`, SHA-256 documented), final claim audit completed across all product materials.
 - [x] **M11 — Publish** — public repo `0dvsh0/draku` pushed; GitHub Pages deploy
       workflow added (site live); release `v0.1.0` published with installer + exe;
       landing-page download buttons wired to the real release asset; repo URLs
-      unified everywhere (site, main.js, README, DEV post); DEV post rewritten
-      (story-first, real code snippets, declared Gemma + GitHub Copilot categories).
+      unified everywhere (site, main.js, README).
 
 ## 9. Conventions
 
